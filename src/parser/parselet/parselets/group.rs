@@ -1,8 +1,8 @@
-use crate::expr::Expr;
-use crate::token::{Token, TokenType};
-use crate::parser::{Parser, precedence::Precedence};
-use crate::parser::parselet::prefix::PrefixParselet;
 use crate::error::LoxResult;
+use crate::expr::Expr;
+use crate::parser::parselet::prefix::PrefixParselet;
+use crate::parser::{Parser, precedence::Precedence};
+use crate::{Token, TokenType};
 
 pub struct GroupParselet;
 

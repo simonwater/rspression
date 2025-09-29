@@ -1,8 +1,8 @@
-use crate::expr::Expr;
-use crate::token::Token;
-use crate::parser::{Parser, precedence::Precedence};
-use crate::parser::parselet::prefix::PrefixParselet;
 use crate::error::LoxResult;
+use crate::expr::Expr;
+use crate::parser::Parser;
+use crate::parser::parselet::prefix::PrefixParselet;
+use crate::Token;
 
 pub struct PreUnaryParselet {
     precedence: i32,

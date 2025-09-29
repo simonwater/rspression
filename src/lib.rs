@@ -9,13 +9,12 @@ pub mod error;
 pub mod expr;
 pub mod parser;
 pub mod runner;
-pub mod scanner;
-pub mod token;
 pub mod values;
 pub mod visitors;
 pub mod vm;
 
 pub use environment::{DefaultEnvironment, Environment};
 pub use error::{LoxError, LoxResult};
+pub use parser::{Parser, Scanner, Token, TokenType};
 pub use runner::LoxRunner;
 pub use values::Value;

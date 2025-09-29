@@ -1,7 +1,7 @@
 use crate::environment::{DefaultEnvironment, Environment};
 use crate::error::LoxResult;
 use crate::parser::Parser;
-use crate::scanner::Scanner;
+use crate::parser::Scanner;
 use crate::values::Value;
 use crate::visitors::Evaluator;
 

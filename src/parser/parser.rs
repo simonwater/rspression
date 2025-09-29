@@ -1,16 +1,15 @@
 use crate::error::{LoxError, LoxResult};
-use crate::expr::{Expr, GetExpr};
+use crate::expr::Expr;
 use crate::parser::parselet::{
-    infix::InfixParselet,
+    infix::{InfixParselet, UnknownInfixParselet},
     parselets::{
         AssignParselet, BinaryParselet, CallParselet, GetParselet, GroupParselet, IdParselet,
         IfParselet, LiteralParselet, LogicParselet, PreUnaryParselet,
     },
-    prefix::PrefixParselet,
+    prefix::{PrefixParselet, UnknownPrefixParselet},
 };
 use crate::parser::precedence::Precedence;
-use crate::token::{Token, TokenType};
-use std::collections::HashMap;
+use crate::{Token, TokenType};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -35,150 +34,63 @@ impl Parser {
 
     pub fn expression_prec(&mut self, min_prec: i32) -> LoxResult<Expr> {
         let token = self.advance();
-        let lhs = self.parse_prefix(&token)?;
-        self.parse_infix(lhs, min_prec)
-    }
+        let prefix_parselet = self.get_prefix(&token.token_type);
+        let mut lhs = prefix_parselet.parse(self, &token)?;
 
-    fn parse_prefix(&mut self, token: &Token) -> LoxResult<Expr> {
-        match token.token_type {
-            TokenType::Number | TokenType::String => Ok(Expr::literal(
-                token.literal.clone().unwrap_or(crate::values::Value::Null),
-            )),
-            TokenType::True => Ok(Expr::literal(crate::values::Value::Boolean(true))),
-            TokenType::False => Ok(Expr::literal(crate::values::Value::Boolean(false))),
-            TokenType::Null => Ok(Expr::literal(crate::values::Value::Null)),
-            TokenType::Identifier => Ok(Expr::id(token.clone())),
-            TokenType::LeftParen => {
-                let expr = self.expression_prec(Precedence::PREC_NONE)?;
-                self.consume(TokenType::RightParen, "Expected ')' after expression")?;
-                Ok(expr)
-            }
-            TokenType::Minus | TokenType::Bang => {
-                let rhs = self.expression_prec(Precedence::PREC_UNARY)?;
-                Ok(Expr::unary(token.clone(), rhs))
-            }
-            TokenType::If => {
-                self.consume(TokenType::LeftParen, "Expected '(' after 'if'")?;
-                let condition = self.expression_prec(Precedence::PREC_NONE)?;
-                self.consume(TokenType::Comma, "Expected ',' after condition")?;
-                let then_branch = self.expression_prec(Precedence::PREC_NONE)?;
-                self.consume(TokenType::Comma, "Expected ',' after then branch")?;
-                let else_branch = self.expression_prec(Precedence::PREC_NONE)?;
-                self.consume(TokenType::RightParen, "Expected ')' after else branch")?;
-                Ok(Expr::if_expr(condition, then_branch, Some(else_branch)))
-            }
-            _ => Err(LoxError::ParseError {
-                line: token.line,
-                message: format!("Unknown token: {:?}", token),
-            }),
-        }
-    }
-
-    fn parse_infix(&mut self, mut lhs: Expr, min_prec: i32) -> LoxResult<Expr> {
         while self.peek().token_type != TokenType::Eof {
             let next = self.peek();
-            let precedence = self.get_precedence(&next.token_type);
+            let infix_parselet = self.get_infix(&next.token_type);
 
-            if precedence <= min_prec {
+            if infix_parselet.get_precedence() <= min_prec {
                 break;
             }
 
             let token = self.advance();
-            lhs = self.parse_infix_op(lhs, &token)?;
+            lhs = infix_parselet.parse(self, lhs, &token)?;
         }
 
         Ok(lhs)
     }
 
-    fn parse_infix_op(&mut self, lhs: Expr, token: &Token) -> LoxResult<Expr> {
-        match token.token_type {
-            TokenType::Plus | TokenType::Minus => {
-                let rhs = self.expression_prec(Precedence::PREC_TERM)?;
-                Ok(Expr::binary(lhs, token.clone(), rhs))
+    fn get_prefix(&mut self, token_type: &TokenType) -> Box<dyn PrefixParselet> {
+        match token_type {
+            TokenType::Number
+            | TokenType::String
+            | TokenType::True
+            | TokenType::False
+            | TokenType::Null => Box::new(LiteralParselet {}),
+            TokenType::Identifier => Box::new(IdParselet {}),
+            TokenType::LeftParen => Box::new(GroupParselet {}),
+            TokenType::Minus | TokenType::Bang => {
+                Box::new(PreUnaryParselet::new(Precedence::PREC_UNARY))
             }
-            TokenType::Star | TokenType::Slash | TokenType::Percent => {
-                let rhs = self.expression_prec(Precedence::PREC_FACTOR)?;
-                Ok(Expr::binary(lhs, token.clone(), rhs))
-            }
-            TokenType::StarStar => {
-                let rhs = self.expression_prec(Precedence::PREC_POWER - 1)?; // Right associative
-                Ok(Expr::binary(lhs, token.clone(), rhs))
-            }
-            TokenType::Equal => {
-                let rhs = self.expression_prec(Precedence::PREC_ASSIGNMENT - 1)?; // Right associative
-                if let Expr::Get(GetExpr { object, name }) = lhs {
-                    Ok(Expr::set(*object, name, rhs))
-                } else {
-                    Ok(Expr::assign(lhs, token.clone(), rhs))
-                }
-            }
-            TokenType::Or | TokenType::And => {
-                let rhs = self.expression_prec(if token.token_type == TokenType::Or {
-                    Precedence::PREC_OR
-                } else {
-                    Precedence::PREC_AND
-                })?;
-                Ok(Expr::logic(lhs, token.clone(), rhs))
-            }
-            TokenType::EqualEqual | TokenType::BangEqual => {
-                let rhs = self.expression_prec(Precedence::PREC_EQUALITY)?;
-                Ok(Expr::binary(lhs, token.clone(), rhs))
-            }
-            TokenType::Less
-            | TokenType::LessEqual
-            | TokenType::Greater
-            | TokenType::GreaterEqual => {
-                let rhs = self.expression_prec(Precedence::PREC_COMPARISON)?;
-                Ok(Expr::binary(lhs, token.clone(), rhs))
-            }
-            TokenType::LeftParen => {
-                let mut arguments = Vec::new();
-
-                if !self.check(&TokenType::RightParen) {
-                    loop {
-                        if arguments.len() >= 255 {
-                            return Err(LoxError::ParseError {
-                                line: self.peek().line,
-                                message: "Can't have more than 255 arguments".to_string(),
-                            });
-                        }
-                        arguments.push(self.expression_prec(Precedence::PREC_NONE)?);
-
-                        if !self.match_token(&[TokenType::Comma]) {
-                            break;
-                        }
-                    }
-                }
-
-                let paren = self.consume(TokenType::RightParen, "Expected ')' after arguments")?;
-                Ok(Expr::call(lhs, arguments, paren))
-            }
-            TokenType::Dot => {
-                let name = self.consume(TokenType::Identifier, "Expect property name after '.'")?;
-                Ok(Expr::get(lhs, name))
-            }
-            _ => Err(LoxError::ParseError {
-                line: token.line,
-                message: format!("Unknown infix operator: {:?}", token),
-            }),
+            TokenType::If => Box::new(IfParselet {}),
+            _ => Box::new(UnknownPrefixParselet {}),
         }
     }
 
-    fn get_precedence(&self, token_type: &TokenType) -> i32 {
+    fn get_infix(&self, token_type: &TokenType) -> Box<dyn InfixParselet> {
         match token_type {
-            TokenType::Equal => Precedence::PREC_ASSIGNMENT,
-            TokenType::Or => Precedence::PREC_OR,
-            TokenType::And => Precedence::PREC_AND,
-            TokenType::EqualEqual | TokenType::BangEqual => Precedence::PREC_EQUALITY,
+            TokenType::Plus | TokenType::Minus => {
+                Box::new(BinaryParselet::new(Precedence::PREC_TERM))
+            }
+            TokenType::Star | TokenType::Slash | TokenType::Percent => {
+                Box::new(BinaryParselet::new(Precedence::PREC_FACTOR))
+            }
+            TokenType::StarStar => Box::new(BinaryParselet::new(Precedence::PREC_POWER)),
+            TokenType::Equal => Box::new(AssignParselet {}),
+            TokenType::Or => Box::new(LogicParselet::new(Precedence::PREC_OR)),
+            TokenType::And => Box::new(LogicParselet::new(Precedence::PREC_AND)),
+            TokenType::EqualEqual | TokenType::BangEqual => {
+                Box::new(BinaryParselet::new(Precedence::PREC_EQUALITY))
+            }
             TokenType::Less
             | TokenType::LessEqual
             | TokenType::Greater
-            | TokenType::GreaterEqual => Precedence::PREC_COMPARISON,
-            TokenType::Plus | TokenType::Minus => Precedence::PREC_TERM,
-            TokenType::Star | TokenType::Slash | TokenType::Percent => Precedence::PREC_FACTOR,
-            TokenType::StarStar => Precedence::PREC_POWER,
-            TokenType::LeftParen | TokenType::Dot => Precedence::PREC_CALL,
-            _ => 0,
+            | TokenType::GreaterEqual => Box::new(BinaryParselet::new(Precedence::PREC_COMPARISON)),
+            TokenType::LeftParen => Box::new(CallParselet::new(Precedence::PREC_CALL)),
+            TokenType::Dot => Box::new(GetParselet::new(Precedence::PREC_CALL)),
+            _ => Box::new(UnknownInfixParselet {}),
         }
     }
 

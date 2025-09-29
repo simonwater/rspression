@@ -1,6 +1,6 @@
 use crate::LoxResult;
 use crate::Value;
-use crate::token::TokenType;
+use crate::TokenType;
 
 pub fn evaluate_binary(left: Value, right: Value, operator: &TokenType) -> LoxResult<Value> {
     match operator {

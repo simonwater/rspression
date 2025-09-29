@@ -1,8 +1,8 @@
+use crate::Token;
 use crate::error::LoxResult;
 use crate::expr::Expr;
 use crate::parser::parselet::infix::InfixParselet;
 use crate::parser::{Parser, precedence::Precedence};
-use crate::token::Token;
 
 pub struct CallParselet {
     precedence: i32,
@@ -18,7 +18,7 @@ impl InfixParselet for CallParselet {
     fn parse(&self, parser: &mut Parser, callee: Expr, token: &Token) -> LoxResult<Expr> {
         let mut arguments = Vec::new();
 
-        if !parser.check(&crate::token::TokenType::RightParen) {
+        if !parser.check(&crate::TokenType::RightParen) {
             loop {
                 if arguments.len() >= 255 {
                     return Err(crate::error::LoxError::ParseError {
@@ -28,16 +28,13 @@ impl InfixParselet for CallParselet {
                 }
                 arguments.push(parser.expression_prec(Precedence::PREC_NONE)?);
 
-                if !parser.match_token(&[crate::token::TokenType::Comma]) {
+                if !parser.match_token(&[crate::TokenType::Comma]) {
                     break;
                 }
             }
         }
 
-        let paren = parser.consume(
-            crate::token::TokenType::RightParen,
-            "Expected ')' after arguments",
-        )?;
+        let paren = parser.consume(crate::TokenType::RightParen, "Expected ')' after arguments")?;
         Ok(Expr::call(callee, arguments, paren))
     }
 

@@ -1,5 +1,5 @@
 use crate::expr::Expr;
-use crate::token::Token;
+use crate::Token;
 use crate::parser::{Parser, precedence::Precedence};
 use crate::parser::parselet::infix::InfixParselet;
 use crate::error::LoxResult;

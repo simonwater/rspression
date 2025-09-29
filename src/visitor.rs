@@ -1,7 +1,7 @@
 use crate::environment::Environment;
 use crate::error::{LoxError, LoxResult};
 
-use crate::token::TokenType;
+use crate::TokenType;
 use crate::value::Value;
 
 use crate::expr::{
