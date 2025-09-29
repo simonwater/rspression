@@ -8,6 +8,6 @@ pub struct LiteralParselet;
 
 impl PrefixParselet for LiteralParselet {
     fn parse(&self, _parser: &mut Parser, token: &Token) -> LoxResult<Expr> {
-        Ok(Expr::literal(token.literal.clone().unwrap_or(crate::value::Value::Null)))
+        Ok(Expr::literal(token.literal.clone().unwrap_or(crate::values::Value::Null)))
     }
 }

@@ -42,11 +42,11 @@ impl Parser {
     fn parse_prefix(&mut self, token: &Token) -> LoxResult<Expr> {
         match token.token_type {
             TokenType::Number | TokenType::String => Ok(Expr::literal(
-                token.literal.clone().unwrap_or(crate::value::Value::Null),
+                token.literal.clone().unwrap_or(crate::values::Value::Null),
             )),
-            TokenType::True => Ok(Expr::literal(crate::value::Value::Boolean(true))),
-            TokenType::False => Ok(Expr::literal(crate::value::Value::Boolean(false))),
-            TokenType::Null => Ok(Expr::literal(crate::value::Value::Null)),
+            TokenType::True => Ok(Expr::literal(crate::values::Value::Boolean(true))),
+            TokenType::False => Ok(Expr::literal(crate::values::Value::Boolean(false))),
+            TokenType::Null => Ok(Expr::literal(crate::values::Value::Null)),
             TokenType::Identifier => Ok(Expr::id(token.clone())),
             TokenType::LeftParen => {
                 let expr = self.expression_prec(Precedence::PREC_NONE)?;

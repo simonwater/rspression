@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::value::Value;
+use crate::values::Value;
 use crate::error::LoxResult;
 
 pub trait Environment {

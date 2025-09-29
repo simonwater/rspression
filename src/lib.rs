@@ -11,11 +11,11 @@ pub mod parser;
 pub mod runner;
 pub mod scanner;
 pub mod token;
-pub mod value;
-pub mod visitor;
+pub mod values;
+pub mod visitors;
 pub mod vm;
 
 pub use environment::{DefaultEnvironment, Environment};
 pub use error::{LoxError, LoxResult};
 pub use runner::LoxRunner;
-pub use value::Value;
+pub use values::Value;

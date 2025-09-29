@@ -1,8 +1,13 @@
 use crate::environment::Environment;
 use crate::error::{LoxError, LoxResult};
-use crate::expr::*;
+
 use crate::token::TokenType;
 use crate::value::Value;
+
+use crate::expr::{
+    AssignExpr, BinaryExpr, CallExpr, Expr, GetExpr, IdExpr, IfExpr, LiteralExpr, LogicExpr,
+    SetExpr, UnaryExpr,
+};
 
 pub trait Visitor<T> {
     fn visit_expr(&mut self, expr: &Expr) -> LoxResult<T>;

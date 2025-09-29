@@ -1,6 +1,6 @@
 use crate::error::{LoxError, LoxResult};
 use crate::token::{Token, TokenType};
-use crate::value::Value;
+use crate::values::Value;
 
 pub struct Scanner {
     source: String,
