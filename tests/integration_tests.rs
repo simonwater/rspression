@@ -15,6 +15,9 @@ fn test_basic_arithmetic() {
 
     let result = runner.execute("8 / 2").unwrap();
     assert_eq!(result, Value::Integer(4));
+
+    let result = runner.execute("1 + 2 * (5 - 2)").unwrap();
+    assert_eq!(result, Value::Integer(7));
 }
 
 #[test]

@@ -370,8 +370,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "criterion",
- "serde",
- "serde_json",
  "thiserror",
 ]
 

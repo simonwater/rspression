@@ -1,7 +1,6 @@
-use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Integer(i64),
     Double(f64),
@@ -11,7 +10,7 @@ pub enum Value {
     Null,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Instance {
     pub fields: std::collections::HashMap<String, Value>,
 }

@@ -1,5 +1,5 @@
 use crate::error::{LoxError, LoxResult};
-use crate::expr::Expr;
+use crate::expr::{Expr, GetExpr};
 use crate::parser::parselet::{
     infix::InfixParselet,
     parselets::{
@@ -47,7 +47,7 @@ impl Parser {
             TokenType::True => Ok(Expr::literal(crate::value::Value::Boolean(true))),
             TokenType::False => Ok(Expr::literal(crate::value::Value::Boolean(false))),
             TokenType::Null => Ok(Expr::literal(crate::value::Value::Null)),
-            TokenType::Identifier => Ok(Expr::variable(token.clone())),
+            TokenType::Identifier => Ok(Expr::id(token.clone())),
             TokenType::LeftParen => {
                 let expr = self.expression_prec(Precedence::PREC_NONE)?;
                 self.consume(TokenType::RightParen, "Expected ')' after expression")?;
@@ -106,10 +106,10 @@ impl Parser {
             }
             TokenType::Equal => {
                 let rhs = self.expression_prec(Precedence::PREC_ASSIGNMENT - 1)?; // Right associative
-                if let Expr::Get { object, name } = lhs {
+                if let Expr::Get(GetExpr { object, name }) = lhs {
                     Ok(Expr::set(*object, name, rhs))
                 } else {
-                    Ok(Expr::assign(token.clone(), rhs))
+                    Ok(Expr::assign(lhs, token.clone(), rhs))
                 }
             }
             TokenType::Or | TokenType::And => {
@@ -118,7 +118,7 @@ impl Parser {
                 } else {
                     Precedence::PREC_AND
                 })?;
-                Ok(Expr::logical(lhs, token.clone(), rhs))
+                Ok(Expr::logic(lhs, token.clone(), rhs))
             }
             TokenType::EqualEqual | TokenType::BangEqual => {
                 let rhs = self.expression_prec(Precedence::PREC_EQUALITY)?;
@@ -151,7 +151,7 @@ impl Parser {
                 }
 
                 let paren = self.consume(TokenType::RightParen, "Expected ')' after arguments")?;
-                Ok(Expr::call(lhs, paren, arguments))
+                Ok(Expr::call(lhs, arguments, paren))
             }
             TokenType::Dot => {
                 let name = self.consume(TokenType::Identifier, "Expect property name after '.'")?;

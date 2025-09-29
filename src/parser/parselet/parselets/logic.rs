@@ -1,8 +1,8 @@
-use crate::expr::Expr;
-use crate::token::Token;
-use crate::parser::{Parser, precedence::Precedence};
-use crate::parser::parselet::infix::InfixParselet;
 use crate::error::LoxResult;
+use crate::expr::Expr;
+use crate::parser::parselet::infix::InfixParselet;
+use crate::parser::{Parser, precedence::Precedence};
+use crate::token::Token;
 
 pub struct LogicParselet {
     precedence: i32,
@@ -32,7 +32,7 @@ impl InfixParselet for LogicParselet {
         } else {
             self.precedence
         })?;
-        Ok(Expr::logical(lhs, token.clone(), rhs))
+        Ok(Expr::logic(lhs, token.clone(), rhs))
     }
 
     fn get_precedence(&self) -> i32 {
