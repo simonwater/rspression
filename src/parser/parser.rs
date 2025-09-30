@@ -77,7 +77,9 @@ impl Parser {
             TokenType::Star | TokenType::Slash | TokenType::Percent => {
                 Box::new(BinaryParselet::new(Precedence::PREC_FACTOR))
             }
-            TokenType::StarStar => Box::new(BinaryParselet::new(Precedence::PREC_POWER)),
+            TokenType::StarStar => Box::new(BinaryParselet::new_right_associative(
+                Precedence::PREC_POWER,
+            )),
             TokenType::Equal => Box::new(AssignParselet {}),
             TokenType::Or => Box::new(LogicParselet::new(Precedence::PREC_OR)),
             TokenType::And => Box::new(LogicParselet::new(Precedence::PREC_AND)),

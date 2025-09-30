@@ -15,8 +15,8 @@ fn test_basic_arithmetic() {
         runner.execute("1 + 2 * (5 - 2)").unwrap()
     );
     assert_eq!(
-        Value::Double(19.0),
-        runner.execute("1 + 2 * 3 ** 2 ** 1").unwrap()
+        Value::Double(1025.0),
+        runner.execute("1 + 2 * 2 ** 3 ** 2").unwrap()
     );
     assert_eq!(Value::Double(9.0), runner.execute("3 * (2 + 1.0)").unwrap());
     assert_eq!(

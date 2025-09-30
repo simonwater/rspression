@@ -1,8 +1,8 @@
+use crate::Token;
 use crate::error::LoxResult;
 use crate::expr::Expr;
+use crate::parser::Parser;
 use crate::parser::parselet::infix::InfixParselet;
-use crate::parser::{Parser, precedence::Precedence};
-use crate::Token;
 
 pub struct LogicParselet {
     precedence: i32,

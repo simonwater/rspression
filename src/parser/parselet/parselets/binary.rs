@@ -1,8 +1,8 @@
-use crate::expr::Expr;
 use crate::Token;
-use crate::parser::{Parser, precedence::Precedence};
-use crate::parser::parselet::infix::InfixParselet;
 use crate::error::LoxResult;
+use crate::expr::Expr;
+use crate::parser::Parser;
+use crate::parser::parselet::infix::InfixParselet;
 
 pub struct BinaryParselet {
     precedence: i32,

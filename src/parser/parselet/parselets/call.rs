@@ -15,7 +15,7 @@ impl CallParselet {
 }
 
 impl InfixParselet for CallParselet {
-    fn parse(&self, parser: &mut Parser, callee: Expr, token: &Token) -> LoxResult<Expr> {
+    fn parse(&self, parser: &mut Parser, callee: Expr, _token: &Token) -> LoxResult<Expr> {
         let mut arguments = Vec::new();
 
         if !parser.check(&crate::TokenType::RightParen) {
