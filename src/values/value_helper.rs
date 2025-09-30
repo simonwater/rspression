@@ -1,8 +1,8 @@
 use crate::LoxResult;
-use crate::Value;
 use crate::TokenType;
+use crate::Value;
 
-pub fn evaluate_binary(left: Value, right: Value, operator: &TokenType) -> LoxResult<Value> {
+pub fn evaluate_binary(left: &Value, right: &Value, operator: &TokenType) -> LoxResult<Value> {
     match operator {
         TokenType::Plus => {
             if !left.is_number() && !left.is_string() || !right.is_number() && !right.is_string() {
@@ -25,7 +25,7 @@ pub fn evaluate_binary(left: Value, right: Value, operator: &TokenType) -> LoxRe
             }
         }
         TokenType::Minus => {
-            check_number_operands(&left, &right)?;
+            check_number_operands(left, right)?;
             if left.is_double() || right.is_double() {
                 Ok(Value::Double(left.as_double() - right.as_double()))
             } else {
@@ -33,7 +33,7 @@ pub fn evaluate_binary(left: Value, right: Value, operator: &TokenType) -> LoxRe
             }
         }
         TokenType::Star => {
-            check_number_operands(&left, &right)?;
+            check_number_operands(left, right)?;
             if left.is_double() || right.is_double() {
                 Ok(Value::Double(left.as_double() * right.as_double()))
             } else {
@@ -41,7 +41,7 @@ pub fn evaluate_binary(left: Value, right: Value, operator: &TokenType) -> LoxRe
             }
         }
         TokenType::Slash => {
-            check_number_operands(&left, &right)?;
+            check_number_operands(left, right)?;
             if right.is_integer() && right.as_integer() == 0 {
                 return Err(crate::error::LoxError::RuntimeError {
                     message: "Division by zero".to_string(),
@@ -54,7 +54,7 @@ pub fn evaluate_binary(left: Value, right: Value, operator: &TokenType) -> LoxRe
             }
         }
         TokenType::Percent => {
-            check_number_operands(&left, &right)?;
+            check_number_operands(left, right)?;
             if left.is_double() || right.is_double() {
                 Ok(Value::Double(left.as_double() % right.as_double()))
             } else {
@@ -62,34 +62,34 @@ pub fn evaluate_binary(left: Value, right: Value, operator: &TokenType) -> LoxRe
             }
         }
         TokenType::StarStar => {
-            check_number_operands(&left, &right)?;
+            check_number_operands(left, right)?;
             Ok(Value::Double(left.as_double().powf(right.as_double())))
         }
         TokenType::Greater => {
-            check_number_operands(&left, &right)?;
+            check_number_operands(left, right)?;
             Ok(Value::Boolean(left.as_double() > right.as_double()))
         }
         TokenType::GreaterEqual => {
-            check_number_operands(&left, &right)?;
+            check_number_operands(left, right)?;
             Ok(Value::Boolean(left.as_double() >= right.as_double()))
         }
         TokenType::Less => {
-            check_number_operands(&left, &right)?;
+            check_number_operands(left, right)?;
             Ok(Value::Boolean(left.as_double() < right.as_double()))
         }
         TokenType::LessEqual => {
-            check_number_operands(&left, &right)?;
+            check_number_operands(left, right)?;
             Ok(Value::Boolean(left.as_double() <= right.as_double()))
         }
-        TokenType::BangEqual => Ok(Value::Boolean(!left.equals(&right))),
-        TokenType::EqualEqual => Ok(Value::Boolean(left.equals(&right))),
+        TokenType::BangEqual => Ok(Value::Boolean(!left.equals(right))),
+        TokenType::EqualEqual => Ok(Value::Boolean(left.equals(right))),
         _ => Err(crate::error::LoxError::RuntimeError {
             message: "Invalid binary operator".to_string(),
         }),
     }
 }
 
-pub fn evaluate_unary(right: Value, operator: &TokenType) -> LoxResult<Value> {
+pub fn evaluate_unary(right: &Value, operator: &TokenType) -> LoxResult<Value> {
     match operator {
         TokenType::Bang => {
             let truthy = right.is_truthy();

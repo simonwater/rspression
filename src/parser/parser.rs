@@ -9,19 +9,26 @@ use crate::parser::parselet::{
     prefix::{PrefixParselet, UnknownPrefixParselet},
 };
 use crate::parser::precedence::Precedence;
+use crate::parser::scanner::Scanner;
 use crate::{Token, TokenType};
 
 pub struct Parser {
+    scanner: Scanner,
     tokens: Vec<Token>,
     current: usize,
 }
 
 impl Parser {
-    pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, current: 0 }
+    pub fn new(source: String) -> Self {
+        Self {
+            scanner: Scanner::new(source),
+            tokens: Vec::new(),
+            current: 0,
+        }
     }
 
     pub fn parse(&mut self) -> LoxResult<Expr> {
+        self.tokens = self.scanner.scan_tokens()?;
         let result = self.expression_prec(Precedence::PREC_NONE)?;
         if self.peek().token_type != TokenType::Eof {
             return Err(LoxError::ParseError {

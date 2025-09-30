@@ -174,7 +174,7 @@ impl Scanner {
             })?;
             Value::Double(d)
         } else {
-            let i: i64 = value_str.parse().map_err(|_| LoxError::ParseError {
+            let i: i32 = value_str.parse().map_err(|_| LoxError::ParseError {
                 line: self.line,
                 message: "Invalid number".to_string(),
             })?;

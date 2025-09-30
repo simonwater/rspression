@@ -12,8 +12,8 @@ impl Instance {
         }
     }
 
-    pub fn get(&self, name: &str) -> Value {
-        self.fields.get(name).cloned().unwrap_or(Value::Null)
+    pub fn get(&self, name: &str) -> Option<&Value> {
+        self.fields.get(name)
     }
 
     pub fn set(&mut self, name: String, value: Value) {

@@ -1,8 +1,8 @@
 use crate::environment::Environment;
 use crate::error::{LoxError, LoxResult};
 
-use crate::expr::Visitor;
 use crate::TokenType;
+use crate::expr::Visitor;
 use crate::values::{Value, value_helper};
 
 use crate::expr::{
@@ -41,7 +41,7 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
         } = expr;
         let left_val = self.evaluate(left)?;
         let right_val = self.evaluate(right)?;
-        value_helper::evaluate_binary(left_val, right_val, &operator.token_type)
+        value_helper::evaluate_binary(&left_val, &right_val, &operator.token_type)
     }
 
     fn visit_logic(&mut self, expr: &LogicExpr) -> LoxResult<Value> {
@@ -81,7 +81,7 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
     fn visit_unary(&mut self, expr: &UnaryExpr) -> LoxResult<Value> {
         let UnaryExpr { operator, right } = expr;
         let right_val = self.evaluate(right)?;
-        value_helper::evaluate_unary(right_val, &operator.token_type)
+        value_helper::evaluate_unary(&right_val, &operator.token_type)
     }
 
     fn visit_id(&mut self, expr: &IdExpr) -> LoxResult<Value> {
@@ -136,7 +136,7 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
         let GetExpr { object, name } = expr;
         let object_val = self.evaluate(object)?;
         if let Some(instance) = object_val.as_instance() {
-            Ok(instance.get(&name.lexeme))
+            Ok(instance.get(&name.lexeme).unwrap().clone())
         } else {
             Err(crate::error::LoxError::RuntimeError {
                 message: "Only instances have properties".to_string(),

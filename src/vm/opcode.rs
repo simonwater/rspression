@@ -1,0 +1,82 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum OpCode {
+    Constant = 0,
+    Null = 1,
+    True = 2,
+    False = 3,
+    Pop = 4,
+    GetLocal = 5,
+    SetLocal = 6,
+    GetGlobal = 7,
+    DefineGlobal = 8,
+    SetGlobal = 9,
+    GetProperty = 10,
+    SetProperty = 11,
+    EqualEqual = 12,
+    BangEqual = 13,
+    Greater = 14,
+    GreaterEqual = 15,
+    Less = 16,
+    LessEqual = 17,
+    Add = 18,
+    Subtract = 19,
+    Multiply = 20,
+    Divide = 21,
+    Mode = 22,
+    Power = 23,
+    Not = 24,
+    Negate = 25,
+    Jump = 26,
+    JumpIfFalse = 27,
+    Call = 28,
+    Begin = 29,
+    End = 30,
+    Return = 31,
+    Exit = 32,
+}
+
+impl TryFrom<u8> for OpCode {
+    type Error = ();
+    fn try_from(v: u8) -> Result<Self, Self::Error> {
+        use OpCode::*;
+        Ok(match v {
+            0 => Constant,
+            1 => Null,
+            2 => True,
+            3 => False,
+            4 => Pop,
+            5 => GetLocal,
+            6 => SetLocal,
+            7 => GetGlobal,
+            8 => DefineGlobal,
+            9 => SetGlobal,
+            10 => GetProperty,
+            11 => SetProperty,
+            12 => EqualEqual,
+            13 => BangEqual,
+            14 => Greater,
+            15 => GreaterEqual,
+            16 => Less,
+            17 => LessEqual,
+            18 => Add,
+            19 => Subtract,
+            20 => Multiply,
+            21 => Divide,
+            22 => Mode,
+            23 => Power,
+            24 => Not,
+            25 => Negate,
+            26 => Jump,
+            27 => JumpIfFalse,
+            28 => Call,
+            29 => Begin,
+            30 => End,
+            31 => Return,
+            32 => Exit,
+            _ => return Err(()),
+        })
+    }
+}
+
+

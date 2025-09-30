@@ -1,7 +1,6 @@
 use crate::environment::{DefaultEnvironment, Environment};
 use crate::error::LoxResult;
 use crate::parser::Parser;
-use crate::parser::Scanner;
 use crate::values::Value;
 use crate::visitors::Evaluator;
 
@@ -60,9 +59,7 @@ impl LoxRunner {
 
         // Parse all expressions
         for expr_str in expressions {
-            let mut scanner = Scanner::new(expr_str.to_string());
-            let tokens = scanner.scan_tokens()?;
-            let mut parser = Parser::new(tokens);
+            let mut parser = Parser::new(expr_str.to_string());
             let expr = parser.parse()?;
             exprs.push(expr);
         }

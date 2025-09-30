@@ -3,7 +3,7 @@ use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
-    Integer(i64),
+    Integer(i32),
     Double(f64),
     String(String),
     Boolean(bool),
@@ -12,6 +12,17 @@ pub enum Value {
 }
 
 impl Value {
+    pub fn type_code(&self) -> u8 {
+        match self {
+            Value::Integer(_) => 1,
+            Value::Double(_) => 4,
+            Value::String(_) => 5,
+            Value::Boolean(_) => 6,
+            Value::Instance(_) => 7,
+            Value::Null => 8,
+        }
+    }
+
     pub fn is_truthy(&self) -> bool {
         match self {
             Value::Null => false,
@@ -57,10 +68,10 @@ impl Value {
         }
     }
 
-    pub fn as_integer(&self) -> i64 {
+    pub fn as_integer(&self) -> i32 {
         match self {
             Value::Integer(i) => *i,
-            Value::Double(d) => *d as i64,
+            Value::Double(d) => *d as i32,
             _ => 0,
         }
     }
@@ -117,8 +128,8 @@ impl Default for Value {
     }
 }
 
-impl From<i64> for Value {
-    fn from(value: i64) -> Self {
+impl From<i32> for Value {
+    fn from(value: i32) -> Self {
         Value::Integer(value)
     }
 }
