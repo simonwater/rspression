@@ -4,7 +4,6 @@
 //! that supports both syntax tree interpretation and bytecode virtual machine execution.
 
 pub mod chunk;
-pub mod env;
 pub mod environment;
 pub mod error;
 pub mod expr;

@@ -1,7 +1,7 @@
 use crate::{
     LoxResult,
     chunk::{Chunk, ChunkReader},
-    env::{DefaultEnvironment, Environment},
+    environment::{DefaultEnvironment, Environment},
     error::LoxError,
     functions::FunctionManager,
     parser::TokenType,
@@ -108,7 +108,7 @@ impl VM {
                 OpCode::SetGlobal => {
                     let name = self.read_string(reader);
                     let value = self.peek().clone();
-                    if !self.environment.assign(&name, value) {
+                    if !self.environment.put(name.clone(), value) {
                         return Err(LoxError::RuntimeError {
                             message: format!("Undefined variable: {}, order: {}", name, exp_order),
                         });

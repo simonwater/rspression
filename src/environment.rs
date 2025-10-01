@@ -1,15 +1,14 @@
-use std::collections::HashMap;
 use crate::values::Value;
-use crate::error::LoxResult;
+use std::collections::HashMap;
 
 pub trait Environment {
-    fn before_execute(&mut self, _vars: &[String]) -> LoxResult<bool> {
-        Ok(true)
+    fn before_execute(&mut self, _vars: &[String]) -> bool {
+        true
     }
-    
-    fn get(&self, name: &str) -> LoxResult<Value>;
-    fn get_or_default(&self, name: &str, default: Value) -> LoxResult<Value>;
-    fn put(&mut self, name: String, value: Value) -> LoxResult<()>;
+
+    fn get(&self, name: &str) -> Option<&Value>;
+    fn get_or_default<'a>(&'a self, name: &str, default: &'a Value) -> Option<&'a Value>;
+    fn put(&mut self, name: String, value: Value) -> bool;
     fn size(&self) -> usize;
 }
 
@@ -27,19 +26,19 @@ impl DefaultEnvironment {
 }
 
 impl Environment for DefaultEnvironment {
-    fn get(&self, name: &str) -> LoxResult<Value> {
-        Ok(self.values.get(name).cloned().unwrap_or(Value::Null))
+    fn get(&self, name: &str) -> Option<&Value> {
+        self.values.get(name)
     }
-    
-    fn get_or_default(&self, name: &str, default: Value) -> LoxResult<Value> {
-        Ok(self.values.get(name).cloned().unwrap_or(default))
+
+    fn get_or_default<'a>(&'a self, name: &str, default: &'a Value) -> Option<&'a Value> {
+        Some(self.values.get(name).unwrap_or(default))
     }
-    
-    fn put(&mut self, name: String, value: Value) -> LoxResult<()> {
+
+    fn put(&mut self, name: String, value: Value) -> bool {
         self.values.insert(name, value);
-        Ok(())
+        true
     }
-    
+
     fn size(&self) -> usize {
         self.values.len()
     }

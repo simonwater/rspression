@@ -86,7 +86,11 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
 
     fn visit_id(&mut self, expr: &IdExpr) -> LoxResult<Value> {
         let IdExpr { name } = expr;
-        self.environment.get_or_default(&name.lexeme, Value::Null)
+        Ok(self
+            .environment
+            .get_or_default(&name.lexeme, &Value::Null)
+            .unwrap()
+            .clone())
     }
 
     fn visit_assign(&mut self, expr: &AssignExpr) -> LoxResult<Value> {
@@ -94,7 +98,7 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
         if let Expr::Id(IdExpr { name }) = &**left {
             // Variable assignment
             let value = self.evaluate(right)?;
-            self.environment.put(name.lexeme.clone(), value.clone())?;
+            self.environment.put(name.lexeme.clone(), value.clone());
             return Ok(value);
         } else {
             Err(LoxError::RuntimeError {

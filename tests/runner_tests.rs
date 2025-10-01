@@ -38,16 +38,16 @@ fn test_variables() {
     let mut runner = LoxRunner::new();
     let mut env = DefaultEnvironment::new();
 
-    env.put("a".to_string(), Value::Integer(1)).unwrap();
-    env.put("b".to_string(), Value::Integer(2)).unwrap();
-    env.put("c".to_string(), Value::Integer(3)).unwrap();
+    env.put("a".to_string(), Value::Integer(1));
+    env.put("b".to_string(), Value::Integer(2));
+    env.put("c".to_string(), Value::Integer(3));
 
     let result = runner
         .execute_with_env("x = y = a + b * c", &mut env)
         .unwrap();
     assert_eq!(Value::Integer(7), result);
-    assert_eq!(Value::Integer(7), env.get("x").unwrap());
-    assert_eq!(Value::Integer(7), env.get("y").unwrap());
+    assert_eq!(Value::Integer(7), *env.get("x").unwrap());
+    assert_eq!(Value::Integer(7), *env.get("y").unwrap());
 
     assert_eq!(
         Value::Double(3.0),

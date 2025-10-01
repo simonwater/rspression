@@ -9,8 +9,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test with variables
     let mut env = DefaultEnvironment::new();
-    env.put("a".to_string(), Value::Integer(5))?;
-    env.put("b".to_string(), Value::Integer(3))?;
+    env.put("a".to_string(), Value::Integer(5));
+    env.put("b".to_string(), Value::Integer(3));
 
     let result = runner.execute_with_env("a + b", &mut env)?;
     println!("a + b = {}", result);
@@ -20,8 +20,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("x = a + b = {}", result);
 
     // Check if x was stored
-    let x_value = env.get("x")?;
-    println!("x value in environment: {}", x_value);
+    let x_value = env.get("x");
+    println!(
+        "x value in environment: {}",
+        x_value.unwrap_or(&Value::Null)
+    );
 
     Ok(())
 }
