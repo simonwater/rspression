@@ -2,29 +2,39 @@ use crate::expr::*;
 use crate::parser::Parser;
 use crate::visitors::VariableSet;
 
-pub struct VarsQuery;
+pub struct VarsQuery {
+    vars: VariableSet,
+}
 
 impl VarsQuery {
     pub fn new() -> Self {
-        VarsQuery
+        VarsQuery {
+            vars: VariableSet::default(),
+        }
     }
 
-    fn execute_src(&mut self, expression: String) -> Option<VariableSet> {
+    pub fn execute_src(&mut self, expression: String) -> Option<&VariableSet> {
+        self.vars = VariableSet::default();
         let expr = Parser::new(expression).parse().ok()?;
         self.execute(&expr)
     }
 
-    fn execute(&mut self, expr: &Expr) -> Option<VariableSet> {
-        expr.accept(self)
+    pub fn reset(&mut self) {
+        self.vars = VariableSet::default();
     }
 
-    fn visit_get_inner(&self, expr: &Expr, names: &mut Vec<String>) {
+    fn execute(&mut self, expr: &Expr) -> Option<&VariableSet> {
+        expr.accept(self);
+        Some(&self.vars)
+    }
+
+    fn visit_object(&self, expr: &Expr, names: &mut Vec<String>) {
         match expr {
             Expr::Id(id_expr) => {
                 names.push(id_expr.name.lexeme.clone());
             }
             Expr::Get(get_expr) => {
-                self.visit_get_inner(&get_expr.object, names);
+                self.visit_object(&get_expr.object, names);
                 names.push(get_expr.name.lexeme.clone());
             }
             _ => {}
@@ -32,97 +42,69 @@ impl VarsQuery {
     }
 }
 
-impl Visitor<Option<VariableSet>> for VarsQuery {
-    fn visit_binary(&mut self, expr: &BinaryExpr) -> Option<VariableSet> {
-        let mut result = self.execute(&expr.left);
-        let rhs = self.execute(&expr.right);
-        if result.is_none() {
-            return rhs;
-        }
-        result.as_mut().unwrap().comebine(rhs);
-        result
+impl Visitor<()> for VarsQuery {
+    fn visit_binary(&mut self, expr: &BinaryExpr) {
+        self.execute(&expr.left);
+        self.execute(&expr.right);
     }
 
-    fn visit_logic(&mut self, expr: &LogicExpr) -> Option<VariableSet> {
-        let mut result = self.execute(&expr.left);
-        let rhs = self.execute(&expr.right);
-        if result.is_none() {
-            return rhs;
-        }
-        result.as_mut().unwrap().comebine(rhs);
-        result
+    fn visit_logic(&mut self, expr: &LogicExpr) {
+        self.execute(&expr.left);
+        self.execute(&expr.right);
     }
 
-    fn visit_literal(&mut self, _expr: &LiteralExpr) -> Option<VariableSet> {
-        None
+    fn visit_literal(&mut self, _expr: &LiteralExpr) {}
+
+    fn visit_unary(&mut self, expr: &UnaryExpr) {
+        self.execute(&expr.right);
     }
 
-    fn visit_unary(&mut self, expr: &UnaryExpr) -> Option<VariableSet> {
-        self.execute(&expr.right)
+    fn visit_id(&mut self, expr: &IdExpr) {
+        self.vars.add_depend(expr.name.lexeme.clone());
     }
 
-    fn visit_id(&mut self, expr: &IdExpr) -> Option<VariableSet> {
-        Some(VariableSet::from_depends(&[&expr.name.lexeme]))
-    }
-
-    fn visit_assign(&mut self, expr: &AssignExpr) -> Option<VariableSet> {
+    fn visit_assign(&mut self, expr: &AssignExpr) {
         let AssignExpr { left, .. } = expr;
         if let Expr::Id(id_expr) = &**left {
-            let mut result = VariableSet::from_assigns(&[&id_expr.name.lexeme]);
-            let rhs = self.execute(&expr.right);
-            result.comebine(rhs);
-            Some(result)
-        } else {
-            None
+            self.vars.add_assign(id_expr.name.lexeme.clone());
+            self.execute(&expr.right);
         }
     }
 
-    fn visit_call(&mut self, expr: &CallExpr) -> Option<VariableSet> {
-        let mut result = VariableSet::default();
+    fn visit_call(&mut self, expr: &CallExpr) {
         for arg in &expr.arguments {
-            let cur = self.execute(arg);
-            result.comebine(cur);
+            self.execute(arg);
         }
-        Some(result)
     }
 
-    fn visit_if(&mut self, expr: &IfExpr) -> Option<VariableSet> {
+    fn visit_if(&mut self, expr: &IfExpr) {
         let IfExpr {
             condition,
             then_branch,
             else_branch,
         } = expr;
-        let mut result = VariableSet::default();
-        result.comebine(self.execute(condition));
-        result.comebine(self.execute(then_branch));
+        self.execute(condition);
+        self.execute(then_branch);
         if let Some(else_branch_expr) = else_branch {
-            result.comebine(self.execute(else_branch_expr));
+            self.execute(else_branch_expr);
         }
-        Some(result)
     }
 
-    fn visit_get(&mut self, expr: &GetExpr) -> Option<VariableSet> {
-        let mut names = Vec::new();
-        self.visit_get_inner(&expr.object, &mut names);
+    fn visit_get(&mut self, expr: &GetExpr) {
+        let mut names: Vec<String> = Vec::new();
+        self.visit_object(&expr.object, &mut names);
         names.push(expr.name.lexeme.clone());
         let id = names.join(".");
-        Some(VariableSet::from_depends(&[&id]))
+        self.vars.add_depend(id);
     }
 
-    fn visit_set(&mut self, expr: &SetExpr) -> Option<VariableSet> {
-        let mut names = Vec::new();
-        self.visit_get_inner(&expr.object, &mut names);
+    fn visit_set(&mut self, expr: &SetExpr) {
+        let mut names: Vec<String> = Vec::new();
+        self.visit_object(&expr.object, &mut names);
         names.push(expr.name.lexeme.clone());
         let id = names.join(".");
-        let gets = Some(VariableSet::from_depends(&[&id]));
-
-        let mut result = VariableSet::default();
-        if let Some(gets) = gets {
-            result.set_assigns(gets.get_depends().clone());
-        }
-        let rhs = self.execute(&expr.value);
-        result.comebine(rhs);
-        Some(result)
+        self.vars.add_assign(id);
+        self.execute(&expr.value);
     }
 }
 
@@ -172,13 +154,23 @@ mod tests {
         }
 
         let start = Instant::now();
+        let mut exprs = Vec::with_capacity(cnt);
+        for line in &lines {
+            let expr = Parser::new(line.to_string()).parse().unwrap();
+            exprs.push(expr);
+        }
+        println!("解析时间: {:?}", start.elapsed());
+
+        println!("开始查询变量...");
+        let start = Instant::now();
+        let mut result: Option<&VariableSet> = None;
         let mut var_query = VarsQuery::new();
-        let mut result: Option<VariableSet> = None;
-        for expr in lines {
-            result = var_query.execute_src(expr);
+        for expr in &exprs {
+            var_query.reset();
+            result = var_query.execute(expr);
         }
         println!("{:?}", result);
-        println!("time: {:?}", start.elapsed());
+        println!("变量提取用时: {:?}", start.elapsed());
         println!("==========");
     }
 }
