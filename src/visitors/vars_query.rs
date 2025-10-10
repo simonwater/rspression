@@ -1,5 +1,5 @@
 use crate::expr::*;
-use crate::parser::Parser;
+use crate::parser::{Parser, Scanner};
 use crate::visitors::VariableSet;
 
 pub struct VarsQuery {
@@ -15,7 +15,7 @@ impl VarsQuery {
 
     pub fn execute_src(&mut self, expression: String) -> Option<&VariableSet> {
         self.vars = VariableSet::default();
-        let expr = Parser::new(expression).parse().ok()?;
+        let expr = Parser::new().parse(expression).ok()?;
         self.execute(&expr)
     }
 
@@ -147,19 +147,28 @@ mod tests {
         println!("公式总数：{}", cnt);
         let fml = "A! = 1 + 2 * 3 - 6 - 1 + B! + C! * (D! - E! + 10 ** 2 / 5 - (12 + 8)) - F! * G! +  100 / 5 ** 2 ** 1";
         let mut lines = Vec::with_capacity(cnt);
-
         for i in 1..=cnt {
             let expr = fml.replace("!", &i.to_string());
             lines.push(expr);
         }
 
+        println!("开始解析公式...");
+        let start = Instant::now();
+        let mut tokens_vec = Vec::with_capacity(cnt);
+        for line in &lines {
+            let mut scanner = Scanner::new(line.to_string());
+            let tokens = scanner.scan_tokens().unwrap();
+            tokens_vec.push(tokens);
+        }
+        println!("词法分析时间: {:?}", start.elapsed());
+
         let start = Instant::now();
         let mut exprs = Vec::with_capacity(cnt);
-        for line in &lines {
-            let expr = Parser::new(line.to_string()).parse().unwrap();
+        for tokens in tokens_vec {
+            let expr = Parser::new().parse_tokens(tokens).unwrap();
             exprs.push(expr);
         }
-        println!("解析时间: {:?}", start.elapsed());
+        println!("语法分析时间: {:?}", start.elapsed());
 
         println!("开始查询变量...");
         let start = Instant::now();

@@ -1,36 +1,41 @@
 use crate::error::{LoxError, LoxResult};
 use crate::values::Value;
 use crate::{Token, TokenType};
+use std::rc::Rc;
 
 pub struct Scanner {
     source: String,
-    tokens: Vec<Token>,
+    chars: Vec<(usize, char)>,
+    tokens: Vec<Rc<Token>>,
     start: usize,
     current: usize,
+    ci: usize,
     line: usize,
 }
 
 impl Scanner {
     pub fn new(source: String) -> Self {
         Self {
-            source,
-            tokens: Vec::new(),
+            chars: source.char_indices().collect(),
+            source: source,
+            tokens: Vec::<Rc<Token>>::new(),
             start: 0,
             current: 0,
+            ci: 0,
             line: 1,
         }
     }
 
-    pub fn scan_tokens(&mut self) -> LoxResult<Vec<Token>> {
+    pub fn scan_tokens(&mut self) -> LoxResult<Vec<Rc<Token>>> {
         while !self.is_at_end() {
             self.start = self.current;
             self.scan_token()?;
         }
 
-        self.tokens
-            .push(Token::new(TokenType::Eof, String::new(), None, self.line));
+        let token = Token::new(TokenType::Eof, String::new(), None, self.line);
+        self.tokens.push(Rc::new(token));
 
-        Ok(self.tokens.clone())
+        Ok(std::mem::take(&mut self.tokens))
     }
 
     fn scan_token(&mut self) -> LoxResult<()> {
@@ -217,11 +222,12 @@ impl Scanner {
     }
 
     fn is_at_end(&self) -> bool {
-        self.current == self.source.len()
+        self.ci == self.chars.len()
     }
 
     fn advance(&mut self) -> char {
-        let ch = self.source[self.current..].chars().next().unwrap();
+        let ch = self.chars[self.ci].1;
+        self.ci += 1;
         self.current += ch.len_utf8();
         ch
     }
@@ -229,10 +235,11 @@ impl Scanner {
         if self.is_at_end() {
             return false;
         }
-        let next = self.source[self.current..].chars().next().unwrap();
+        let next = self.chars[self.ci].1;
         if next != c {
             return false;
         }
+        self.ci += 1;
         self.current += c.len_utf8();
         true
     }
@@ -240,13 +247,15 @@ impl Scanner {
         if self.is_at_end() {
             '\0'
         } else {
-            self.source[self.current..].chars().next().unwrap()
+            self.chars[self.ci].1
         }
     }
     fn peek_next(&self) -> char {
-        let mut iter = self.source[self.current..].chars();
-        iter.next();
-        iter.next().unwrap_or('\0')
+        if self.ci + 1 >= self.chars.len() {
+            '\0'
+        } else {
+            self.chars[self.ci + 1].1
+        }
     }
 
     fn add_token(&mut self, token_type: TokenType) {
@@ -255,8 +264,8 @@ impl Scanner {
 
     fn add_token_with_literal(&mut self, token_type: TokenType, literal: Option<Value>) {
         let text = self.source[self.start..self.current].to_string();
-        self.tokens
-            .push(Token::new(token_type, text, literal, self.line));
+        let token = Token::new(token_type, text, literal, self.line);
+        self.tokens.push(Rc::new(token));
     }
 
     fn is_alpha(&self, c: char) -> bool {

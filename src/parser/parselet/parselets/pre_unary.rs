@@ -1,8 +1,9 @@
+use crate::Token;
 use crate::error::LoxResult;
 use crate::expr::Expr;
 use crate::parser::Parser;
 use crate::parser::parselet::prefix::PrefixParselet;
-use crate::Token;
+use std::rc::Rc;
 
 pub struct PreUnaryParselet {
     precedence: i32,
@@ -15,7 +16,7 @@ impl PreUnaryParselet {
 }
 
 impl PrefixParselet for PreUnaryParselet {
-    fn parse(&self, parser: &mut Parser, token: &Token) -> LoxResult<Expr> {
+    fn parse(&self, parser: &mut Parser, token: Rc<Token>) -> LoxResult<Expr> {
         let rhs = parser.expression_prec(self.precedence)?;
         Ok(Expr::unary(token.clone(), rhs))
     }

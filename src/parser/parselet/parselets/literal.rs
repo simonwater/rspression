@@ -4,11 +4,12 @@ use crate::expr::Expr;
 use crate::parser::Parser;
 use crate::parser::parselet::prefix::PrefixParselet;
 use crate::{Token, TokenType};
+use std::rc::Rc;
 
 pub struct LiteralParselet;
 
 impl PrefixParselet for LiteralParselet {
-    fn parse(&self, _parser: &mut Parser, token: &Token) -> LoxResult<Expr> {
+    fn parse(&self, _parser: &mut Parser, token: Rc<Token>) -> LoxResult<Expr> {
         let value = match token.token_type {
             TokenType::Number | TokenType::String => token.literal.clone().unwrap_or(Value::Null),
             TokenType::True => Value::Boolean(true),

@@ -3,6 +3,7 @@ use crate::error::LoxResult;
 use crate::expr::Expr;
 use crate::parser::Parser;
 use crate::parser::parselet::infix::InfixParselet;
+use std::rc::Rc;
 
 pub struct LogicParselet {
     precedence: i32,
@@ -26,7 +27,7 @@ impl LogicParselet {
 }
 
 impl InfixParselet for LogicParselet {
-    fn parse(&self, parser: &mut Parser, lhs: Expr, token: &Token) -> LoxResult<Expr> {
+    fn parse(&self, parser: &mut Parser, lhs: Expr, token: Rc<Token>) -> LoxResult<Expr> {
         let rhs = parser.expression_prec(if self.is_right {
             self.precedence - 1
         } else {

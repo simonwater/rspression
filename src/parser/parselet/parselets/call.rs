@@ -3,6 +3,7 @@ use crate::error::LoxResult;
 use crate::expr::Expr;
 use crate::parser::parselet::infix::InfixParselet;
 use crate::parser::{Parser, precedence::Precedence};
+use std::rc::Rc;
 
 pub struct CallParselet {
     precedence: i32,
@@ -15,7 +16,7 @@ impl CallParselet {
 }
 
 impl InfixParselet for CallParselet {
-    fn parse(&self, parser: &mut Parser, callee: Expr, _token: &Token) -> LoxResult<Expr> {
+    fn parse(&self, parser: &mut Parser, callee: Expr, _token: Rc<Token>) -> LoxResult<Expr> {
         let mut arguments = Vec::new();
 
         if !parser.check(&crate::TokenType::RightParen) {

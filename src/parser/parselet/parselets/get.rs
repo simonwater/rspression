@@ -3,6 +3,7 @@ use crate::error::LoxResult;
 use crate::expr::Expr;
 use crate::parser::Parser;
 use crate::parser::parselet::infix::InfixParselet;
+use std::rc::Rc;
 
 pub struct GetParselet {
     precedence: i32,
@@ -15,7 +16,7 @@ impl GetParselet {
 }
 
 impl InfixParselet for GetParselet {
-    fn parse(&self, parser: &mut Parser, object: Expr, _token: &Token) -> LoxResult<Expr> {
+    fn parse(&self, parser: &mut Parser, object: Expr, _token: Rc<Token>) -> LoxResult<Expr> {
         let name = parser.consume(
             crate::TokenType::Identifier,
             "Expect property name after '.'",

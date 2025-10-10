@@ -1,5 +1,6 @@
 use crate::Token;
 use crate::values::Value;
+use std::rc::Rc;
 
 pub enum Expr {
     Binary(BinaryExpr),
@@ -43,7 +44,7 @@ impl Expr {
         }
     }
 
-    pub fn binary(left: Expr, operator: Token, right: Expr) -> Self {
+    pub fn binary(left: Expr, operator: Rc<Token>, right: Expr) -> Self {
         Expr::Binary(BinaryExpr {
             left: Box::new(left),
             operator,
@@ -51,7 +52,7 @@ impl Expr {
         })
     }
 
-    pub fn logic(left: Expr, operator: Token, right: Expr) -> Self {
+    pub fn logic(left: Expr, operator: Rc<Token>, right: Expr) -> Self {
         Expr::Logic(LogicExpr {
             left: Box::new(left),
             operator,
@@ -63,18 +64,18 @@ impl Expr {
         Expr::Literal(LiteralExpr { value })
     }
 
-    pub fn unary(operator: Token, right: Expr) -> Self {
+    pub fn unary(operator: Rc<Token>, right: Expr) -> Self {
         Expr::Unary(UnaryExpr {
             operator,
             right: Box::new(right),
         })
     }
 
-    pub fn id(token: Token) -> Self {
+    pub fn id(token: Rc<Token>) -> Self {
         Expr::Id(IdExpr { name: token })
     }
 
-    pub fn assign(left: Expr, operator: Token, right: Expr) -> Self {
+    pub fn assign(left: Expr, operator: Rc<Token>, right: Expr) -> Self {
         Expr::Assign(AssignExpr {
             left: Box::new(left),
             operator,
@@ -82,7 +83,7 @@ impl Expr {
         })
     }
 
-    pub fn call(callee: Expr, arguments: Vec<Expr>, r_paren: Token) -> Self {
+    pub fn call(callee: Expr, arguments: Vec<Expr>, r_paren: Rc<Token>) -> Self {
         Expr::Call(CallExpr {
             callee: Box::new(callee),
             arguments,
@@ -98,14 +99,14 @@ impl Expr {
         })
     }
 
-    pub fn get(object: Expr, name: Token) -> Self {
+    pub fn get(object: Expr, name: Rc<Token>) -> Self {
         Expr::Get(GetExpr {
             object: Box::new(object),
             name,
         })
     }
 
-    pub fn set(object: Expr, name: Token, value: Expr) -> Self {
+    pub fn set(object: Expr, name: Rc<Token>, value: Expr) -> Self {
         Expr::Set(SetExpr {
             object: Box::new(object),
             name,
@@ -116,13 +117,13 @@ impl Expr {
 
 pub struct BinaryExpr {
     pub left: Box<Expr>,
-    pub operator: Token,
+    pub operator: Rc<Token>,
     pub right: Box<Expr>,
 }
 
 pub struct LogicExpr {
     pub left: Box<Expr>,
-    pub operator: Token,
+    pub operator: Rc<Token>,
     pub right: Box<Expr>,
 }
 
@@ -131,24 +132,24 @@ pub struct LiteralExpr {
 }
 
 pub struct UnaryExpr {
-    pub operator: Token,
+    pub operator: Rc<Token>,
     pub right: Box<Expr>,
 }
 
 pub struct IdExpr {
-    pub name: Token,
+    pub name: Rc<Token>,
 }
 
 pub struct AssignExpr {
     pub left: Box<Expr>,
-    pub operator: Token,
+    pub operator: Rc<Token>,
     pub right: Box<Expr>,
 }
 
 pub struct CallExpr {
     pub callee: Box<Expr>,
     pub arguments: Vec<Expr>,
-    pub r_paren: Token,
+    pub r_paren: Rc<Token>,
 }
 
 pub struct IfExpr {
@@ -159,11 +160,11 @@ pub struct IfExpr {
 
 pub struct GetExpr {
     pub object: Box<Expr>,
-    pub name: Token,
+    pub name: Rc<Token>,
 }
 
 pub struct SetExpr {
     pub object: Box<Expr>,
-    pub name: Token,
+    pub name: Rc<Token>,
     pub value: Box<Expr>,
 }

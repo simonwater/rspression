@@ -4,11 +4,12 @@ use crate::expr::Expr;
 use crate::expr::GetExpr;
 use crate::parser::parselet::infix::InfixParselet;
 use crate::parser::{Parser, precedence::Precedence};
+use std::rc::Rc;
 
 pub struct AssignParselet;
 
 impl InfixParselet for AssignParselet {
-    fn parse(&self, parser: &mut Parser, lhs: Expr, token: &Token) -> LoxResult<Expr> {
+    fn parse(&self, parser: &mut Parser, lhs: Expr, token: Rc<Token>) -> LoxResult<Expr> {
         // 右结合，优先级降低一位，有连续等号时先解析后面的
         let rhs = parser.expression_prec(self.get_precedence() - 1)?;
 

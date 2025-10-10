@@ -11,24 +11,30 @@ use crate::parser::parselet::{
 use crate::parser::precedence::Precedence;
 use crate::parser::scanner::Scanner;
 use crate::{Token, TokenType};
+use std::rc::Rc;
 
 pub struct Parser {
-    scanner: Scanner,
-    tokens: Vec<Token>,
+    tokens: Vec<Rc<Token>>,
     current: usize,
 }
 
 impl Parser {
-    pub fn new(source: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            scanner: Scanner::new(source),
             tokens: Vec::new(),
             current: 0,
         }
     }
 
-    pub fn parse(&mut self) -> LoxResult<Expr> {
-        self.tokens = self.scanner.scan_tokens()?;
+    pub fn parse(&mut self, source: String) -> LoxResult<Expr> {
+        let scanner = &mut Scanner::new(source);
+        let tokens = scanner.scan_tokens()?;
+        self.parse_tokens(tokens)
+    }
+
+    pub fn parse_tokens(&mut self, tokens: Vec<Rc<Token>>) -> LoxResult<Expr> {
+        self.tokens = tokens;
+        self.current = 0;
         let result = self.expression_prec(Precedence::PREC_NONE)?;
         if self.peek().token_type != TokenType::Eof {
             return Err(LoxError::ParseError {
@@ -42,7 +48,7 @@ impl Parser {
     pub fn expression_prec(&mut self, min_prec: i32) -> LoxResult<Expr> {
         let token = self.advance();
         let prefix_parselet = self.get_prefix(&token.token_type);
-        let mut lhs = prefix_parselet.parse(self, &token)?;
+        let mut lhs = prefix_parselet.parse(self, token)?;
 
         while self.peek().token_type != TokenType::Eof {
             let next = self.peek();
@@ -53,7 +59,7 @@ impl Parser {
             }
 
             let token = self.advance();
-            lhs = infix_parselet.parse(self, lhs, &token)?;
+            lhs = infix_parselet.parse(self, lhs, token)?;
         }
 
         Ok(lhs)
@@ -113,7 +119,7 @@ impl Parser {
         false
     }
 
-    pub fn consume(&mut self, token_type: TokenType, message: &str) -> LoxResult<Token> {
+    pub fn consume(&mut self, token_type: TokenType, message: &str) -> LoxResult<Rc<Token>> {
         if self.check(&token_type) {
             Ok(self.advance())
         } else {
@@ -124,7 +130,7 @@ impl Parser {
         }
     }
 
-    pub fn advance(&mut self) -> Token {
+    pub fn advance(&mut self) -> Rc<Token> {
         if !self.is_at_end() {
             self.current += 1;
         }
@@ -139,7 +145,8 @@ impl Parser {
         &self.tokens[self.current]
     }
 
-    pub fn previous(&self) -> Token {
+    pub fn previous(&self) -> Rc<Token> {
+        //std::mem::take(&mut self.tokens[self.current - 1])
         self.tokens[self.current - 1].clone()
     }
 
