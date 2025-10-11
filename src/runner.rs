@@ -59,8 +59,9 @@ impl LoxRunner {
 
         // Parse all expressions
         for expr_str in expressions {
-            let mut parser = Parser::new();
-            let expr = parser.parse(expr_str.to_string())?;
+            let expr = expr_str.to_string();
+            let mut parser = Parser::new(&expr);
+            let expr = parser.parse()?;
             exprs.push(expr);
         }
 

@@ -72,3 +72,14 @@ impl Token {
         }
     }
 }
+
+impl Default for Token {
+    fn default() -> Self {
+        Self {
+            token_type: TokenType::Error,
+            lexeme: "".to_string(),
+            literal: None,
+            line: 0,
+        }
+    }
+}

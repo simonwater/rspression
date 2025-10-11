@@ -22,10 +22,7 @@ impl InfixParselet for CallParselet {
         if !parser.check(&crate::TokenType::RightParen) {
             loop {
                 if arguments.len() >= 255 {
-                    return Err(crate::error::LoxError::ParseError {
-                        line: parser.peek().line,
-                        message: "Can't have more than 255 arguments".to_string(),
-                    });
+                    return Err(parser.parse_err("Can't have more than 255 arguments".to_string()));
                 }
                 arguments.push(parser.expression_prec(Precedence::PREC_NONE)?);
 

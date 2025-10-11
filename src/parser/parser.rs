@@ -13,59 +13,53 @@ use crate::parser::scanner::Scanner;
 use crate::{Token, TokenType};
 use std::rc::Rc;
 
-pub struct Parser {
-    tokens: Vec<Rc<Token>>,
-    current: usize,
+pub struct Parser<'a> {
+    previous: Rc<Token>,
+    current: Rc<Token>,
+    scanner: Scanner<'a>,
 }
 
-impl Parser {
-    pub fn new() -> Self {
+impl<'a> Parser<'a> {
+    pub fn new(source: &'a String) -> Self {
         Self {
-            tokens: Vec::new(),
-            current: 0,
+            previous: Rc::new(Token::default()),
+            current: Rc::new(Token::default()),
+            scanner: Scanner::new(source),
         }
     }
 
-    pub fn parse(&mut self, source: String) -> LoxResult<Expr> {
-        let scanner = &mut Scanner::new(source);
-        let tokens = scanner.scan_tokens()?;
-        self.parse_tokens(tokens)
-    }
-
-    pub fn parse_tokens(&mut self, tokens: Vec<Rc<Token>>) -> LoxResult<Expr> {
-        self.tokens = tokens;
-        self.current = 0;
+    pub fn parse(&mut self) -> LoxResult<Expr> {
+        self.advance()?;
         let result = self.expression_prec(Precedence::PREC_NONE)?;
-        if self.peek().token_type != TokenType::Eof {
+        if self.current.token_type != TokenType::Eof {
             return Err(LoxError::ParseError {
-                line: self.peek().line,
-                message: format!("Unknown token: {:?}", self.peek()),
+                line: self.current.line,
+                message: format!("Unknown token: {:?}", self.current),
             });
         }
         Ok(result)
     }
 
     pub fn expression_prec(&mut self, min_prec: i32) -> LoxResult<Expr> {
-        let token = self.advance();
-        let prefix_parselet = self.get_prefix(&token.token_type);
-        let mut lhs = prefix_parselet.parse(self, token)?;
+        self.advance();
+        let prefix_parselet = self.get_prefix(&self.previous.token_type);
+        let mut lhs = prefix_parselet.parse(self, self.previous.clone())?;
 
-        while self.peek().token_type != TokenType::Eof {
-            let next = self.peek();
-            let infix_parselet = self.get_infix(&next.token_type);
+        while self.current.token_type != TokenType::Eof {
+            let infix_parselet = self.get_infix(&self.current.token_type);
 
             if infix_parselet.get_precedence() <= min_prec {
                 break;
             }
 
-            let token = self.advance();
-            lhs = infix_parselet.parse(self, lhs, token)?;
+            self.advance();
+            lhs = infix_parselet.parse(self, lhs, self.previous.clone())?;
         }
 
         Ok(lhs)
     }
 
-    fn get_prefix(&mut self, token_type: &TokenType) -> Box<dyn PrefixParselet> {
+    fn get_prefix(&self, token_type: &TokenType) -> Box<dyn PrefixParselet> {
         match token_type {
             TokenType::Number
             | TokenType::String
@@ -109,6 +103,13 @@ impl Parser {
         }
     }
 
+    pub fn parse_err(&self, message: String) -> LoxError {
+        LoxError::ParseError {
+            line: self.current.line,
+            message,
+        }
+    }
+
     pub fn match_token(&mut self, types: &[TokenType]) -> bool {
         for token_type in types {
             if self.check(token_type) {
@@ -121,36 +122,31 @@ impl Parser {
 
     pub fn consume(&mut self, token_type: TokenType, message: &str) -> LoxResult<Rc<Token>> {
         if self.check(&token_type) {
-            Ok(self.advance())
+            self.advance();
+            Ok(self.previous.clone())
         } else {
             Err(LoxError::ParseError {
-                line: self.peek().line,
+                line: self.current.line,
                 message: message.to_string(),
             })
         }
     }
 
-    pub fn advance(&mut self) -> Rc<Token> {
+    fn advance(&mut self) -> LoxResult<()> {
+        self.previous = self.current.clone();
+
         if !self.is_at_end() {
-            self.current += 1;
+            let token = self.scanner.next_token()?;
+            self.current = Rc::new(token);
         }
-        self.previous()
+        Ok(())
     }
 
     pub fn check(&self, token_type: &TokenType) -> bool {
-        self.peek().token_type == *token_type
+        self.current.token_type == *token_type
     }
 
-    pub fn peek(&self) -> &Token {
-        &self.tokens[self.current]
-    }
-
-    pub fn previous(&self) -> Rc<Token> {
-        //std::mem::take(&mut self.tokens[self.current - 1])
-        self.tokens[self.current - 1].clone()
-    }
-
-    pub fn is_at_end(&self) -> bool {
-        self.peek().token_type == TokenType::Eof
+    fn is_at_end(&self) -> bool {
+        self.current.token_type == TokenType::Eof
     }
 }

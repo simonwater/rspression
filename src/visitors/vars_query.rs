@@ -1,5 +1,5 @@
 use crate::expr::*;
-use crate::parser::{Parser, Scanner};
+use crate::parser::Parser;
 use crate::visitors::VariableSet;
 
 pub struct VarsQuery {
@@ -15,7 +15,7 @@ impl VarsQuery {
 
     pub fn execute_src(&mut self, expression: String) -> Option<&VariableSet> {
         self.vars = VariableSet::default();
-        let expr = Parser::new().parse(expression).ok()?;
+        let expr = Parser::new(&expression).parse().ok()?;
         self.execute(&expr)
     }
 
@@ -154,21 +154,12 @@ mod tests {
 
         println!("开始解析公式...");
         let start = Instant::now();
-        let mut tokens_vec = Vec::with_capacity(cnt);
-        for line in &lines {
-            let mut scanner = Scanner::new(line.to_string());
-            let tokens = scanner.scan_tokens().unwrap();
-            tokens_vec.push(tokens);
-        }
-        println!("词法分析时间: {:?}", start.elapsed());
-
-        let start = Instant::now();
         let mut exprs = Vec::with_capacity(cnt);
-        for tokens in tokens_vec {
-            let expr = Parser::new().parse_tokens(tokens).unwrap();
+        for line in &lines {
+            let expr = Parser::new(line).parse().unwrap();
             exprs.push(expr);
         }
-        println!("语法分析时间: {:?}", start.elapsed());
+        println!("公式解析时间: {:?}", start.elapsed());
 
         println!("开始查询变量...");
         let start = Instant::now();

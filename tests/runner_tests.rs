@@ -3,6 +3,7 @@ use rspression::{DefaultEnvironment, Environment, LoxRunner, Value};
 #[test]
 fn test_basic_arithmetic() {
     let mut runner = LoxRunner::new();
+    assert_eq!(Value::Integer(3), runner.execute("//a\n1 + 2").unwrap());
     assert_eq!(Value::Integer(3), runner.execute("1 + 2").unwrap());
     assert_eq!(Value::Integer(2), runner.execute("5 - 3").unwrap());
     assert_eq!(Value::Integer(12), runner.execute("4 * 3").unwrap());
