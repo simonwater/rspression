@@ -5,6 +5,9 @@ pub enum LoxError {
     #[error("Parse error at line {line}: {message}")]
     ParseError { line: usize, message: String },
 
+    #[error("Analyze error: {message}")]
+    AnalyzeError { message: String },
+
     #[error("Runtime error: {message}")]
     RuntimeError { message: String },
 

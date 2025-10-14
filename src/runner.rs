@@ -1,8 +1,10 @@
 use crate::environment::{DefaultEnvironment, Environment};
-use crate::error::LoxResult;
+use crate::expr::Expr;
+use crate::ir::{Analyzer, ExprInfo};
 use crate::parser::Parser;
 use crate::values::Value;
 use crate::visitors::Evaluator;
+use crate::{LoxError, LoxResult};
 
 pub struct LoxRunner {
     need_sort: bool,
@@ -55,26 +57,32 @@ impl LoxRunner {
         expressions: &[&str],
         env: &mut E,
     ) -> LoxResult<Vec<Value>> {
-        let mut exprs = Vec::new();
+        let exprs = self.parse(expressions)?;
 
-        // Parse all expressions
+        let ana = Analyzer::new(exprs, self.need_sort);
+        let expr_infos = ana.analyze()?;
+
+        // Execute expressions
+        let mut results = Vec::new();
+        let mut evaluator = Evaluator::new(env);
+
+        for expr_info in expr_infos {
+            let result = evaluator.evaluate(expr_info.get_expr())?;
+            results.push(result);
+        }
+
+        Ok(results)
+    }
+
+    pub fn parse(&mut self, expressions: &[&str]) -> LoxResult<Vec<Expr>> {
+        let mut exprs = Vec::new();
         for expr_str in expressions {
             let expr = expr_str.to_string();
             let mut parser = Parser::new(&expr);
             let expr = parser.parse()?;
             exprs.push(expr);
         }
-
-        // Execute expressions
-        let mut results = Vec::new();
-        let mut evaluator = Evaluator::new(env);
-
-        for expr in &exprs {
-            let result = evaluator.evaluate(expr)?;
-            results.push(result);
-        }
-
-        Ok(results)
+        Ok(exprs)
     }
 }
 

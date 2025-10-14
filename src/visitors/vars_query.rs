@@ -23,7 +23,7 @@ impl VarsQuery {
         self.vars = VariableSet::default();
     }
 
-    fn execute(&mut self, expr: &Expr) -> Option<&VariableSet> {
+    pub fn execute(&mut self, expr: &Expr) -> Option<&VariableSet> {
         expr.accept(self);
         Some(&self.vars)
     }

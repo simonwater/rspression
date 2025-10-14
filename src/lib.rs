@@ -4,10 +4,13 @@
 //! that supports both syntax tree interpretation and bytecode virtual machine execution.
 
 pub mod chunk;
+//pub mod context;
 pub mod environment;
 pub mod error;
 pub mod expr;
+pub mod field;
 pub mod functions;
+pub mod ir;
 pub mod parser;
 pub mod runner;
 pub mod values;
