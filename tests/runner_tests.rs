@@ -133,8 +133,8 @@ fn test_muilti_evaluate() {
     assert_eq!(Value::Integer(7), *env.get("y").unwrap());
 }
 
-//#[test]
-fn testCalculation() {
+#[test]
+fn test_calculation() {
     let mut srcs = Vec::new();
     srcs.push("x = a + b * c");
     srcs.push("a = m + n");

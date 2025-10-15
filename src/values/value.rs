@@ -113,7 +113,15 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::Integer(i) => write!(f, "{}", i),
-            Value::Double(d) => write!(f, "{}", d),
+            Value::Double(d) => {
+                if d.fract() == 0.0 {
+                    // 没有小数部分，添加 .0
+                    write!(f, "{}.0", d.trunc())
+                } else {
+                    // 有小数部分，原样显示
+                    write!(f, "{}", d)
+                }
+            }
             Value::String(s) => write!(f, "{}", s),
             Value::Boolean(b) => write!(f, "{}", b),
             Value::Instance(_) => write!(f, "<instance>"),
