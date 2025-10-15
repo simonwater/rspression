@@ -1,10 +1,16 @@
+use crate::Field;
+use crate::Value;
+use crate::chunk::Chunk;
 use crate::environment::{DefaultEnvironment, Environment};
 use crate::expr::Expr;
 use crate::ir::{Analyzer, ExprInfo};
 use crate::parser::Parser;
-use crate::values::Value;
-use crate::visitors::Evaluator;
+use crate::visitors::{Evaluator, OpCodeCompiler};
+use crate::vm::VM;
 use crate::{LoxError, LoxResult};
+
+use std::collections::HashSet;
+use std::rc::Rc;
 
 pub struct LoxRunner {
     need_sort: bool,
@@ -62,16 +68,63 @@ impl LoxRunner {
         let ana = Analyzer::new(exprs, self.need_sort);
         let expr_infos = ana.analyze()?;
 
-        // Execute expressions
-        let mut results = Vec::new();
-        let mut evaluator = Evaluator::new(env);
+        let results = if self.execute_mode == ExecuteMode::ChunkVM {
+            let chunk = self.compile_ir(&expr_infos);
+            self.run_chunk(&chunk, env)
+        } else {
+            self.run_ir(&expr_infos, env)
+        };
+        results
+    }
 
-        for expr_info in expr_infos {
-            let result = evaluator.evaluate(expr_info.get_expr())?;
-            results.push(result);
+    pub fn run_ir<E: Environment>(
+        &mut self,
+        expr_infos: &[&ExprInfo],
+        env: &mut E,
+    ) -> LoxResult<Vec<Value>> {
+        // let mut variables = HashSet::new();
+        // for info in expr_infos {
+        //     variables.union(info.get_reads());
+        //     variables.union(info.get_writes());
+        // }
+        // let fields = self.get_fields(&variables);
+        // let flag = env.before_execute(variables.into_iter().collect());
+        // if !flag {
+        //     return Ok(Vec::new());
+        // }
+
+        let n = expr_infos.len();
+        let mut result = vec![Value::default(); n];
+        for info in expr_infos {
+            let expr = info.get_expr();
+            let mut evtor = Evaluator::new(env);
+            let v = evtor.evaluate(expr)?;
+            result[info.get_index()] = v;
         }
+        Ok(result)
+    }
 
-        Ok(results)
+    pub fn run_chunk<E: Environment>(
+        &mut self,
+        chunk: &Chunk,
+        env: &mut E,
+    ) -> LoxResult<Vec<Value>> {
+        // let chunk_reader = ChunkReader::new(chunk, self.context.get_tracer());
+        // let fields = self.get_fields(&chunk_reader.get_variables());
+        // let flag = env.before_execute(&strs.iter().map(|str| str).collect());
+        // if !flag {
+        //     return None;
+        // }
+
+        let mut vm = VM::new();
+        let ex_results = vm.execute_with_env(chunk, env)?;
+        let mut result = vec![Value::default(); ex_results.len()];
+        for res in ex_results {
+            let r = res.result;
+            let index = res.index;
+            result[index as usize] = r;
+        }
+        Ok(result)
     }
 
     pub fn parse(&mut self, expressions: &[&str]) -> LoxResult<Vec<Expr>> {
@@ -83,6 +136,28 @@ impl LoxRunner {
             exprs.push(expr);
         }
         Ok(exprs)
+    }
+
+    pub fn compile_source(&mut self, expressions: &[&str]) -> LoxResult<Chunk> {
+        let exprs = self.parse(expressions)?;
+        let ana = Analyzer::new(exprs, self.need_sort);
+        let expr_infos = ana.analyze()?;
+        let chunk = self.compile_ir(&expr_infos);
+        Ok(chunk)
+    }
+
+    pub fn compile_ir(&mut self, expr_infos: &[&ExprInfo]) -> Chunk {
+        let mut compiler = OpCodeCompiler::new();
+        compiler.begin_compile();
+        for expr_info in expr_infos {
+            compiler.compile(expr_info);
+        }
+        let result = compiler.end_compile();
+        result
+    }
+
+    fn get_fields(&self, strs: &HashSet<String>) -> Vec<Rc<Field>> {
+        strs.iter().map(|str| Field::with_str(str)).collect()
     }
 }
 

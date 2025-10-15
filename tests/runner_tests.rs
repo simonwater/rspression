@@ -104,7 +104,7 @@ fn test_logical_operations() {
     assert_eq!(result, Value::Boolean(false));
 }
 
-//#[test]
+#[test]
 fn test_muilti_evaluate() {
     let mut env = DefaultEnvironment::new();
 

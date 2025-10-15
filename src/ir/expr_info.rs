@@ -3,8 +3,8 @@ use crate::visitors::{VariableSet, VarsQuery};
 use std::collections::HashSet;
 
 pub struct ExprInfo {
-    precursors: HashSet<String>, // 依赖的变量 read
-    successors: HashSet<String>, // 被赋值的变量 write
+    reads: HashSet<String>,  // 依赖的变量 read
+    writes: HashSet<String>, // 被赋值的变量 write
     expr: Expr,
     index: usize,
 }
@@ -12,8 +12,8 @@ pub struct ExprInfo {
 impl ExprInfo {
     pub fn new(expr: Expr, index: usize) -> Self {
         let mut info = ExprInfo {
-            precursors: HashSet::new(),
-            successors: HashSet::new(),
+            reads: HashSet::new(),
+            writes: HashSet::new(),
             expr,
             index,
         };
@@ -24,8 +24,8 @@ impl ExprInfo {
     fn init_variables(&mut self) {
         let mut var_query = VarsQuery::new();
         if let Some(var_set) = var_query.execute(&self.expr) {
-            self.precursors = var_set.get_depends().clone();
-            self.successors = var_set.get_assigns().clone();
+            self.reads = var_set.get_depends().clone();
+            self.writes = var_set.get_assigns().clone();
         }
     }
 
@@ -33,20 +33,12 @@ impl ExprInfo {
         matches!(self.expr, Expr::Assign(_) | Expr::Set(_))
     }
 
-    pub fn get_precursors(&self) -> &HashSet<String> {
-        &self.precursors
+    pub fn get_reads(&self) -> &HashSet<String> {
+        &self.reads
     }
 
-    pub fn set_precursors(&mut self, precursors: HashSet<String>) {
-        self.precursors = precursors;
-    }
-
-    pub fn get_successors(&self) -> &HashSet<String> {
-        &self.successors
-    }
-
-    pub fn set_successors(&mut self, successors: HashSet<String>) {
-        self.successors = successors;
+    pub fn get_writes(&self) -> &HashSet<String> {
+        &self.writes
     }
 
     pub fn get_expr(&self) -> &Expr {

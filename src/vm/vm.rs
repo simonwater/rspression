@@ -16,7 +16,6 @@ pub struct ExResult {
 
 pub struct VM {
     stack: Vec<Value>,
-    environment: Box<dyn Environment>,
     function_manager: FunctionManager,
 }
 
@@ -26,19 +25,8 @@ impl VM {
     pub fn new() -> Self {
         Self {
             stack: Vec::with_capacity(Self::STACK_MAX),
-            environment: Box::new(DefaultEnvironment::new()),
             function_manager: FunctionManager::new(),
         }
-    }
-
-    pub fn execute(&mut self, chunk: &Chunk) -> LoxResult<Vec<ExResult>> {
-        let mut reader = ChunkReader::new(&chunk.codes, &chunk.constants, &chunk.vars);
-        self.execute_reader(&mut reader)
-    }
-
-    pub fn execute_reader(&mut self, reader: &mut ChunkReader) -> LoxResult<Vec<ExResult>> {
-        self.reset();
-        self.run(reader)
     }
 
     fn reset(&mut self) {
@@ -68,9 +56,43 @@ impl VM {
         }
     }
 
-    fn run(&mut self, reader: &mut ChunkReader) -> LoxResult<Vec<ExResult>> {
+    pub fn execute(&mut self, chunk: &Chunk) -> LoxResult<Vec<ExResult>> {
+        let mut reader = ChunkReader::new(&chunk.codes, &chunk.constants, &chunk.vars);
+        let mut env = DefaultEnvironment::new();
+        self.run(&mut reader, &mut env)
+    }
+
+    pub fn execute_reader(&mut self, reader: &mut ChunkReader) -> LoxResult<Vec<ExResult>> {
+        self.reset();
+        let mut env = DefaultEnvironment::new();
+        self.run(reader, &mut env)
+    }
+
+    pub fn execute_with_env<E: Environment>(
+        &mut self,
+        chunk: &Chunk,
+        env: &mut E,
+    ) -> LoxResult<Vec<ExResult>> {
+        let mut reader = ChunkReader::new(&chunk.codes, &chunk.constants, &chunk.vars);
+        self.run(&mut reader, env)
+    }
+
+    pub fn execute_reader_with_env<E: Environment>(
+        &mut self,
+        reader: &mut ChunkReader,
+        env: &mut E,
+    ) -> LoxResult<Vec<ExResult>> {
+        self.run(reader, env)
+    }
+
+    fn run<E: Environment>(
+        &mut self,
+        reader: &mut ChunkReader,
+        env: &mut E,
+    ) -> LoxResult<Vec<ExResult>> {
         let mut result = Vec::new();
         let mut exp_order = 0;
+        self.reset();
 
         loop {
             let op = self.read_code(reader);
@@ -97,7 +119,7 @@ impl VM {
                 }
                 OpCode::GetGlobal => {
                     let name = self.read_string(reader);
-                    if let Some(value) = self.environment.get(&name) {
+                    if let Some(value) = env.get(&name) {
                         self.push(value.clone());
                     } else {
                         return Err(LoxError::RuntimeError {
@@ -108,7 +130,7 @@ impl VM {
                 OpCode::SetGlobal => {
                     let name = self.read_string(reader);
                     let value = self.peek().clone();
-                    if !self.environment.put(name.clone(), value) {
+                    if !env.put(name.clone(), value) {
                         return Err(LoxError::RuntimeError {
                             message: format!("Undefined variable: {}, order: {}", name, exp_order),
                         });

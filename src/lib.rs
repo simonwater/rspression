@@ -19,6 +19,7 @@ pub mod vm;
 
 pub use environment::{DefaultEnvironment, Environment};
 pub use error::{LoxError, LoxResult};
+pub use field::Field;
 pub use parser::{Parser, Scanner, Token, TokenType};
-pub use runner::LoxRunner;
+pub use runner::{ExecuteMode, LoxRunner};
 pub use values::Value;

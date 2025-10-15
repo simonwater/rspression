@@ -8,6 +8,7 @@ use crate::{
         SetExpr, UnaryExpr, Visitor,
     },
     functions::FunctionManager,
+    ir::ExprInfo,
     parser::TokenType,
     values::Value,
     vm::OpCode,
@@ -33,8 +34,17 @@ impl OpCodeCompiler {
         self.var_set.clear();
     }
 
-    pub fn compile(&mut self, expr: &Expr, order: i32) -> LoxResult<()> {
-        self.emit_op_with_arg(OpCode::Begin, order);
+    pub fn compile(&mut self, exprInfo: &ExprInfo) -> LoxResult<()> {
+        let expr = exprInfo.get_expr();
+        let order = exprInfo.get_index();
+        self.compile_expr(expr, order)?;
+        self.var_set.union(exprInfo.get_reads());
+        self.var_set.union(exprInfo.get_writes());
+        Ok(())
+    }
+
+    pub fn compile_expr(&mut self, expr: &Expr, order: usize) -> LoxResult<()> {
+        self.emit_op_with_arg(OpCode::Begin, order as i32);
         self.execute(expr)?;
         self.emit_op(OpCode::End);
         Ok(())

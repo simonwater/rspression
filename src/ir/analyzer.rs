@@ -1,7 +1,9 @@
+use bitvec::index;
+
 use super::digraph::{Digraph, TopologicalSort};
 use crate::expr::Expr;
 use crate::ir::ExprInfo;
-use crate::ir::node_set::NodeSet;
+use crate::ir::node_set::{Node, NodeSet};
 use crate::{LoxError, LoxResult};
 
 pub struct Analyzer {
@@ -36,22 +38,22 @@ impl Analyzer {
 
     fn init_node_set(expr_infos: &Vec<ExprInfo>) -> NodeSet<usize> {
         let mut node_set = NodeSet::new();
-        for (i, expr_info) in expr_infos.iter().enumerate() {
+        for expr_info in expr_infos {
             if !expr_info.is_assign() {
                 continue;
             }
-            let mut flag = true;
-            for name in expr_info.get_successors() {
-                if flag {
-                    node_set.add_node_with_info(name, Some(i));
-                    flag = true;
-                } else {
-                    node_set.add_node_with_info(name, None);
-                }
+
+            for name in expr_info.get_reads() {
+                node_set.add_node(name);
             }
 
-            for name in expr_info.get_precursors() {
-                node_set.add_node(name);
+            let mut flag = true;
+            for name in expr_info.get_writes() {
+                let node = node_set.add_node(name);
+                if flag {
+                    node.info = Some(expr_info.get_index());
+                    flag = false;
+                }
             }
         }
         node_set
@@ -66,13 +68,11 @@ impl Analyzer {
             if !info.is_assign() {
                 continue;
             }
-            for prec in info.get_precursors() {
-                let pre_node = node_set.get_node_by_name(prec).expect("pre node not found");
+            for prec in info.get_reads() {
+                let pre_node = node_set.get_node(prec).expect("pre node not found");
                 let u = pre_node.index;
-                for succ in info.get_successors() {
-                    let succ_node = node_set
-                        .get_node_by_name(succ)
-                        .expect("succ node not found");
+                for succ in info.get_writes() {
+                    let succ_node = node_set.get_node(succ).expect("succ node not found");
                     let v = succ_node.index;
                     graph.add_edge(u, v);
                 }
@@ -116,10 +116,11 @@ impl Analyzer {
         };
 
         for &node_index in node_orders {
-            let node = self.node_set.get_node_by_index(node_index);
-            if let Some(ref index) = node.info {
-                let info = &self.expr_infos[*index];
-                result.push(info);
+            if let Some(Node { info, .. }) = self.node_set.get_node_by_index(node_index) {
+                if let Some(index) = info {
+                    let expr_info = &self.expr_infos[*index];
+                    result.push(expr_info);
+                }
             }
         }
 
@@ -129,5 +130,104 @@ impl Analyzer {
             }
         }
         Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{DefaultEnvironment, Environment, LoxRunner};
+
+    #[test]
+    fn test1() {
+        let srcs = vec![
+            "x = y = a + b * c",
+            "a = m + n",
+            "b = a * 2",
+            "c = n + w + b",
+        ];
+        println!("拓扑排序测试：");
+        for expression in &srcs {
+            println!("{}", expression);
+        }
+
+        let mut runner = LoxRunner::new();
+        let exprs = runner.parse(&srcs).unwrap();
+        let ana = Analyzer::new(exprs, true);
+        let expr_infos = ana.analyze().unwrap();
+        println!("排序结果为：");
+        for info in &expr_infos {
+            println!("{}", srcs[info.get_index()]);
+        }
+        assert!(expr_infos.len() == 4);
+        assert_eq!("a = m + n", srcs[expr_infos[0].get_index()]);
+        assert_eq!("b = a * 2", srcs[expr_infos[1].get_index()]);
+        assert_eq!("c = n + w + b", srcs[expr_infos[2].get_index()]);
+        assert_eq!("x = y = a + b * c", srcs[expr_infos[3].get_index()]);
+
+        runner = LoxRunner::new();
+        let mut env = DefaultEnvironment::new();
+        env.put("m".to_string(), 2.into());
+        env.put("n".to_string(), 4.into());
+        env.put("w".to_string(), 6.into());
+        runner.execute_multiple_with_env(&srcs, &mut env).unwrap();
+        assert_eq!(270, env.get("x").unwrap().as_integer());
+        assert_eq!(270, env.get("y").unwrap().as_integer());
+        assert_eq!(6, env.get("a").unwrap().as_integer());
+        assert_eq!(12, env.get("b").unwrap().as_integer());
+        assert_eq!(22, env.get("c").unwrap().as_integer());
+        println!("==========");
+    }
+
+    #[test]
+    fn test2() {
+        let srcs = vec![
+            "b * 2 + 1",
+            "a * b + c",
+            "x = y = a + b * c",
+            "a = m + n",
+            "b = a * 2",
+            "c = n + w + b",
+        ];
+        println!("拓扑排序测试：");
+        for expression in &srcs {
+            println!("{}", expression);
+        }
+
+        let mut runner = LoxRunner::new();
+        let exprs = runner.parse(&srcs).unwrap();
+        let ana = Analyzer::new(exprs, true);
+        let expr_infos = ana.analyze().unwrap();
+        println!("排序结果为：");
+        for info in &expr_infos {
+            println!("{}", srcs[info.get_index()]);
+        }
+        assert!(expr_infos.len() == 6);
+        assert_eq!("a = m + n", srcs[expr_infos[0].get_index()]);
+        assert_eq!("b = a * 2", srcs[expr_infos[1].get_index()]);
+        assert_eq!("c = n + w + b", srcs[expr_infos[2].get_index()]);
+        assert_eq!("x = y = a + b * c", srcs[expr_infos[3].get_index()]);
+        assert_eq!("b * 2 + 1", srcs[expr_infos[4].get_index()]);
+        assert_eq!("a * b + c", srcs[expr_infos[5].get_index()]);
+
+        runner = LoxRunner::new();
+        let mut env = DefaultEnvironment::new();
+        env.put("m".to_string(), 2.into());
+        env.put("n".to_string(), 4.into());
+        env.put("w".to_string(), 6.into());
+        let result = runner.execute_multiple_with_env(&srcs, &mut env).unwrap();
+        assert_eq!(270, env.get("x").unwrap().as_integer());
+        assert_eq!(270, env.get("y").unwrap().as_integer());
+        assert_eq!(6, env.get("a").unwrap().as_integer());
+        assert_eq!(12, env.get("b").unwrap().as_integer());
+        assert_eq!(22, env.get("c").unwrap().as_integer());
+
+        assert_eq!(12 * 2 + 1, result[0].as_integer());
+        assert_eq!(6 * 12 + 22, result[1].as_integer());
+        assert_eq!(270, result[2].as_integer());
+        assert_eq!(6, result[3].as_integer());
+        assert_eq!(12, result[4].as_integer());
+        assert_eq!(22, result[5].as_integer());
+        println!("==========");
     }
 }

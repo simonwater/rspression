@@ -16,11 +16,15 @@ impl<T> Node<T> {
             index,
         }
     }
+
+    pub fn set_info(&mut self, info: T) {
+        self.info = Some(info)
+    }
 }
 
 pub struct NodeSet<T> {
-    nodes_map: HashMap<String, Rc<Node<T>>>,
-    nodes: Vec<Rc<Node<T>>>,
+    nodes_map: HashMap<String, usize>,
+    nodes: Vec<Node<T>>,
     cnt: usize,
 }
 
@@ -33,36 +37,54 @@ impl<T> NodeSet<T> {
         }
     }
 
-    pub fn add_node(&mut self, name: &str) -> Rc<Node<T>> {
+    pub fn add_node(&mut self, name: &str) -> &mut Node<T> {
         self.add_node_with_info(name, None)
     }
 
-    pub fn add_node_with_info(&mut self, name: &str, info: Option<T>) -> Rc<Node<T>> {
-        if let Some(node) = self.nodes_map.get(name) {
-            return node.clone();
+    pub fn add_node_with_info(&mut self, name: &str, info: Option<T>) -> &mut Node<T> {
+        if let Some(&index) = self.nodes_map.get(name) {
+            return &mut self.nodes[index];
         }
-        let node = Rc::new(Node::new(name, self.cnt, info));
-        self.nodes_map.insert(name.to_string(), node.clone());
-        self.nodes.push(node.clone());
+        let node = Node::new(name, self.cnt, info);
+        self.nodes_map.insert(name.to_string(), self.cnt);
+        self.nodes.push(node);
         self.cnt += 1;
-        node
+        &mut self.nodes[self.cnt - 1]
     }
 
-    pub fn get_node_by_name(&self, name: &str) -> Option<Rc<Node<T>>> {
-        match self.nodes_map.get(name) {
-            Some(node) => Some(node.clone()),
-            None => None,
+    pub fn get_mut_node(&mut self, name: &str) -> Option<&mut Node<T>> {
+        if let Some(&index) = self.nodes_map.get(name) {
+            self.nodes.get_mut(index)
+        } else {
+            None
         }
     }
 
-    pub fn get_node_by_index(&self, index: usize) -> Rc<Node<T>> {
-        self.validate_index(index);
-        self.nodes[index].clone()
+    pub fn get_node(&self, name: &str) -> Option<&Node<T>> {
+        self.nodes_map
+            .get(name)
+            .and_then(|&index| self.nodes.get(index))
     }
 
-    fn validate_index(&self, i: usize) {
-        if i >= self.cnt {
-            panic!("index {} is not between 0 and {}", i, self.cnt - 1);
+    pub fn get_node_mut_by_index(&mut self, index: usize) -> Option<&mut Node<T>> {
+        self.validate_index(index).ok()?;
+        self.nodes.get_mut(index)
+    }
+
+    pub fn get_node_by_index(&self, index: usize) -> Option<&Node<T>> {
+        self.validate_index(index).ok()?;
+        self.nodes.get(index)
+    }
+
+    fn validate_index(&self, index: usize) -> Result<(), String> {
+        if index >= self.cnt {
+            Err(format!(
+                "index {} is not between 0 and {}",
+                index,
+                self.cnt - 1
+            ))
+        } else {
+            Ok(())
         }
     }
 
@@ -74,8 +96,9 @@ impl<T> NodeSet<T> {
 impl<'a, T> fmt::Display for NodeSet<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for i in 0..self.cnt {
-            let node = self.get_node_by_index(i);
-            writeln!(f, "{}: {}({})", i, node.name, node.index)?;
+            if let Some(node) = self.get_node_by_index(i) {
+                writeln!(f, "{}: {}({})", i, node.name, node.index)?;
+            }
         }
         Ok(())
     }
