@@ -137,7 +137,12 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
     }
 
     fn visit_literal(&mut self, expr: &LiteralExpr) -> LoxResult<()> {
-        self.emit_constant(expr.value.clone());
+        match expr.value {
+            Value::Boolean(v) if v => self.emit_op(OpCode::True),
+            Value::Boolean(v) if !v => self.emit_op(OpCode::False),
+            Value::Null => self.emit_op(OpCode::Null),
+            _ => self.emit_constant(expr.value.clone()),
+        };
         Ok(())
     }
 

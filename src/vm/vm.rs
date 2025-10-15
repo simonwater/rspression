@@ -117,6 +117,12 @@ impl VM {
                 OpCode::Null => {
                     self.push(Value::Null);
                 }
+                OpCode::True => {
+                    self.push(Value::Boolean(true));
+                }
+                OpCode::False => {
+                    self.push(Value::Boolean(false));
+                }
                 OpCode::GetGlobal => {
                     let name = self.read_string(reader);
                     if let Some(value) = env.get(&name) {
