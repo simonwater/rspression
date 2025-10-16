@@ -38,8 +38,8 @@ impl OpCodeCompiler {
         let expr = exprInfo.get_expr();
         let order = exprInfo.get_index();
         self.compile_expr(expr, order)?;
-        self.var_set.union(exprInfo.get_reads());
-        self.var_set.union(exprInfo.get_writes());
+        self.var_set.extend(exprInfo.get_reads().clone());
+        self.var_set.extend(exprInfo.get_writes().clone());
         Ok(())
     }
 

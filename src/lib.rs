@@ -4,7 +4,6 @@
 //! that supports both syntax tree interpretation and bytecode virtual machine execution.
 
 pub mod chunk;
-//pub mod context;
 pub mod environment;
 pub mod error;
 pub mod expr;
@@ -17,6 +16,7 @@ pub mod values;
 pub mod visitors;
 pub mod vm;
 
+pub use chunk::Chunk;
 pub use environment::{DefaultEnvironment, Environment};
 pub use error::{LoxError, LoxResult};
 pub use field::Field;

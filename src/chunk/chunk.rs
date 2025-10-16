@@ -37,4 +37,8 @@ impl Chunk {
             vars,
         }
     }
+
+    pub fn get_byte_size(&self) -> usize {
+        self.codes.len() + self.constants.len() + self.vars.len()
+    }
 }

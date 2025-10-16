@@ -1,4 +1,5 @@
 use crate::Field;
+use crate::LoxResult;
 use crate::Value;
 use crate::chunk::Chunk;
 use crate::environment::{DefaultEnvironment, Environment};
@@ -7,7 +8,6 @@ use crate::ir::{Analyzer, ExprInfo};
 use crate::parser::Parser;
 use crate::visitors::{Evaluator, OpCodeCompiler};
 use crate::vm::VM;
-use crate::{LoxError, LoxResult};
 
 use std::collections::HashSet;
 use std::rc::Rc;
@@ -69,7 +69,7 @@ impl LoxRunner {
         let expr_infos = ana.analyze()?;
 
         let results = if self.execute_mode == ExecuteMode::ChunkVM {
-            let chunk = self.compile_ir(&expr_infos);
+            let chunk = self.compile_ir(&expr_infos)?;
             self.run_chunk(&chunk, env)
         } else {
             self.run_ir(&expr_infos, env)
@@ -142,18 +142,17 @@ impl LoxRunner {
         let exprs = self.parse(expressions)?;
         let ana = Analyzer::new(exprs, self.need_sort);
         let expr_infos = ana.analyze()?;
-        let chunk = self.compile_ir(&expr_infos);
-        Ok(chunk)
+        self.compile_ir(&expr_infos)
     }
 
-    pub fn compile_ir(&mut self, expr_infos: &[&ExprInfo]) -> Chunk {
+    pub fn compile_ir(&mut self, expr_infos: &[&ExprInfo]) -> LoxResult<Chunk> {
         let mut compiler = OpCodeCompiler::new();
         compiler.begin_compile();
         for expr_info in expr_infos {
-            compiler.compile(expr_info);
+            compiler.compile(expr_info).unwrap();
         }
         let result = compiler.end_compile();
-        result
+        Ok(result)
     }
 
     fn get_fields(&self, strs: &HashSet<String>) -> Vec<Rc<Field>> {
