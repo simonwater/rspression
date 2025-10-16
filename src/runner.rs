@@ -129,9 +129,8 @@ impl LoxRunner {
 
     pub fn parse(&mut self, expressions: &[&str]) -> LoxResult<Vec<Expr>> {
         let mut exprs = Vec::new();
-        for expr_str in expressions {
-            let expr = expr_str.to_string();
-            let mut parser = Parser::new(&expr);
+        for expr in expressions {
+            let mut parser = Parser::new(expr);
             let expr = parser.parse()?;
             exprs.push(expr);
         }

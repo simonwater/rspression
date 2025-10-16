@@ -20,7 +20,7 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(source: &'a String) -> Self {
+    pub fn new(source: &'a str) -> Self {
         Self {
             previous: Rc::new(Token::default()),
             current: Rc::new(Token::default()),

@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::str::Chars;
 
 pub struct Scanner<'a> {
-    source: &'a String,
+    source: &'a str,
     chars: Peekable<Chars<'a>>,
     tokens: Vec<Rc<Token>>,
     current_char: Option<char>,
@@ -29,7 +29,7 @@ fn is_chinese_character(c: char) -> bool {
 }
 
 impl<'a> Scanner<'a> {
-    pub fn new(source: &'a String) -> Self {
+    pub fn new(source: &'a str) -> Self {
         Self {
             chars: source.chars().peekable(),
             source: source,
