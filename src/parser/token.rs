@@ -55,15 +55,20 @@ pub enum TokenType {
 }
 
 #[derive(Debug, Clone)]
-pub struct Token {
+pub struct Token<'a> {
     pub token_type: TokenType,
-    pub lexeme: String,
+    pub lexeme: &'a str,
     pub literal: Option<Value>,
     pub line: usize,
 }
 
-impl Token {
-    pub fn new(token_type: TokenType, lexeme: String, literal: Option<Value>, line: usize) -> Self {
+impl<'a> Token<'a> {
+    pub fn new(
+        token_type: TokenType,
+        lexeme: &'a str,
+        literal: Option<Value>,
+        line: usize,
+    ) -> Self {
         Self {
             token_type,
             lexeme,
@@ -73,11 +78,11 @@ impl Token {
     }
 }
 
-impl Default for Token {
+impl<'a> Default for Token<'a> {
     fn default() -> Self {
         Self {
             token_type: TokenType::Error,
-            lexeme: "".to_string(),
+            lexeme: "",
             literal: None,
             line: 0,
         }

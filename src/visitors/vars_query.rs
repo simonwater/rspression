@@ -31,11 +31,11 @@ impl VarsQuery {
     fn visit_object(&self, expr: &Expr, names: &mut Vec<String>) {
         match expr {
             Expr::Id(id_expr) => {
-                names.push(id_expr.name.lexeme.clone());
+                names.push(id_expr.name.lexeme.to_string());
             }
             Expr::Get(get_expr) => {
                 self.visit_object(&get_expr.object, names);
-                names.push(get_expr.name.lexeme.clone());
+                names.push(get_expr.name.lexeme.to_string());
             }
             _ => {}
         }
@@ -60,13 +60,13 @@ impl Visitor<()> for VarsQuery {
     }
 
     fn visit_id(&mut self, expr: &IdExpr) {
-        self.vars.add_depend(expr.name.lexeme.clone());
+        self.vars.add_depend(expr.name.lexeme.to_string());
     }
 
     fn visit_assign(&mut self, expr: &AssignExpr) {
         let AssignExpr { left, .. } = expr;
         if let Expr::Id(id_expr) = &**left {
-            self.vars.add_assign(id_expr.name.lexeme.clone());
+            self.vars.add_assign(id_expr.name.lexeme.to_string());
             self.execute(&expr.right);
         }
     }
@@ -93,7 +93,7 @@ impl Visitor<()> for VarsQuery {
     fn visit_get(&mut self, expr: &GetExpr) {
         let mut names: Vec<String> = Vec::new();
         self.visit_object(&expr.object, &mut names);
-        names.push(expr.name.lexeme.clone());
+        names.push(expr.name.lexeme.to_string());
         let id = names.join(".");
         self.vars.add_depend(id);
     }
@@ -101,7 +101,7 @@ impl Visitor<()> for VarsQuery {
     fn visit_set(&mut self, expr: &SetExpr) {
         let mut names: Vec<String> = Vec::new();
         self.visit_object(&expr.object, &mut names);
-        names.push(expr.name.lexeme.clone());
+        names.push(expr.name.lexeme.to_string());
         let id = names.join(".");
         self.vars.add_assign(id);
         self.execute(&expr.value);

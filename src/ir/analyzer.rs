@@ -1,20 +1,18 @@
-use bitvec::index;
-
 use super::digraph::{Digraph, TopologicalSort};
 use crate::expr::Expr;
 use crate::ir::ExprInfo;
 use crate::ir::node_set::{Node, NodeSet};
 use crate::{LoxError, LoxResult};
 
-pub struct Analyzer {
-    expr_infos: Vec<ExprInfo>,
+pub struct Analyzer<'a> {
+    expr_infos: Vec<ExprInfo<'a>>,
     node_set: NodeSet<usize>,
     graph: Digraph,
     need_sort: bool,
 }
 
-impl Analyzer {
-    pub fn new(exprs: Vec<Expr>, need_sort: bool) -> Self {
+impl<'a> Analyzer<'a> {
+    pub fn new(exprs: Vec<Expr<'a>>, need_sort: bool) -> Self {
         let expr_infos = Self::init_infos(exprs);
         let node_set = Self::init_node_set(&expr_infos);
         let graph = Self::init_graph(&node_set, &expr_infos);

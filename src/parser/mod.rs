@@ -1,4 +1,3 @@
-pub mod parselet;
 pub mod parser;
 pub mod precedence;
 pub mod scanner;

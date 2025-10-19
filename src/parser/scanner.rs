@@ -8,7 +8,7 @@ use std::str::Chars;
 pub struct Scanner<'a> {
     source: &'a str,
     chars: Peekable<Chars<'a>>,
-    tokens: Vec<Rc<Token>>,
+    tokens: Vec<Rc<Token<'a>>>,
     current_char: Option<char>,
     start: usize,
     current: usize,
@@ -41,19 +41,19 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    pub fn scan_tokens(&mut self) -> LoxResult<Vec<Rc<Token>>> {
-        while !self.is_at_end() {
-            let token = self.next_token()?;
-            self.tokens.push(Rc::new(token));
-        }
+    // pub fn scan_tokens(&mut self) -> LoxResult<Vec<Rc<Token>>> {
+    //     while !self.is_at_end() {
+    //         let token = self.next_token()?;
+    //         self.tokens.push(Rc::new(token));
+    //     }
 
-        let token = Token::new(TokenType::Eof, String::new(), None, self.line);
-        self.tokens.push(Rc::new(token));
+    //     let token = Token::new(TokenType::Eof, "", None, self.line);
+    //     self.tokens.push(Rc::new(token));
 
-        Ok(std::mem::take(&mut self.tokens))
-    }
+    //     Ok(std::mem::take(&mut self.tokens))
+    // }
 
-    pub fn next_token(&mut self) -> LoxResult<Token> {
+    pub fn next_token(&mut self) -> LoxResult<Token<'a>> {
         self.skip_whitespace();
         self.start = self.current;
         if self.is_at_end() {
@@ -92,7 +92,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn scan_token(&mut self) -> LoxResult<Token> {
+    fn scan_token(&mut self) -> LoxResult<Token<'a>> {
         let c = self.current_char.unwrap_or('\0');
         match c {
             '(' => self.make_token(TokenType::LeftParen),
@@ -164,7 +164,7 @@ impl<'a> Scanner<'a> {
             '"' => self.string(),
             c if c.is_ascii_digit() => self.number(),
             c if is_alpha(c) => self.identifier(),
-            '\0' => Ok(Token::new(TokenType::Eof, String::new(), None, self.line)),
+            '\0' => Ok(Token::new(TokenType::Eof, "", None, self.line)),
             _ => {
                 return Err(LoxError::ParseError {
                     line: self.line,
@@ -174,7 +174,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn string(&mut self) -> LoxResult<Token> {
+    fn string(&mut self) -> LoxResult<Token<'a>> {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
                 self.line += 1;
@@ -195,7 +195,7 @@ impl<'a> Scanner<'a> {
         Ok(self.token_with_literal(TokenType::String, Some(Value::String(value))))
     }
 
-    fn number(&mut self) -> LoxResult<Token> {
+    fn number(&mut self) -> LoxResult<Token<'a>> {
         while self.peek().is_ascii_digit() {
             self.advance();
         }
@@ -235,7 +235,7 @@ impl<'a> Scanner<'a> {
         Ok(self.token_with_literal(TokenType::Number, Some(value)))
     }
 
-    fn identifier(&mut self) -> LoxResult<Token> {
+    fn identifier(&mut self) -> LoxResult<Token<'a>> {
         while is_alpha_numeric(self.peek()) {
             self.advance();
         }
@@ -305,12 +305,12 @@ impl<'a> Scanner<'a> {
         if let Some(&c) = iter.peek() { c } else { '\0' }
     }
 
-    fn make_token(&mut self, token_type: TokenType) -> LoxResult<Token> {
+    fn make_token(&mut self, token_type: TokenType) -> LoxResult<Token<'a>> {
         Ok(self.token_with_literal(token_type, None))
     }
 
-    fn token_with_literal(&mut self, token_type: TokenType, literal: Option<Value>) -> Token {
-        let text = self.source[self.start..self.current].to_string();
+    fn token_with_literal(&mut self, token_type: TokenType, literal: Option<Value>) -> Token<'a> {
+        let text = &self.source[self.start..self.current];
         Token::new(token_type, text, literal, self.line)
     }
 }

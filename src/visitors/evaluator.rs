@@ -98,7 +98,7 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
         if let Expr::Id(IdExpr { name }) = &**left {
             // Variable assignment
             let value = self.evaluate(right)?;
-            self.environment.put(name.lexeme.clone(), value.clone());
+            self.environment.put(name.lexeme.to_string(), value.clone());
             return Ok(value);
         } else {
             Err(LoxError::RuntimeError {
@@ -158,7 +158,7 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
         let mut object_val = self.evaluate(object)?;
         let value_val = self.evaluate(value)?;
         if let Some(instance) = object_val.as_instance_mut() {
-            instance.set(name.lexeme.clone(), value_val.clone());
+            instance.set(name.lexeme.to_string(), value_val.clone());
             Ok(value_val)
         } else {
             Err(crate::error::LoxError::RuntimeError {

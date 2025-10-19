@@ -127,7 +127,7 @@ impl LoxRunner {
         Ok(result)
     }
 
-    pub fn parse(&mut self, expressions: &[&str]) -> LoxResult<Vec<Expr>> {
+    pub fn parse<'a>(&mut self, expressions: &[&'a str]) -> LoxResult<Vec<Expr<'a>>> {
         let mut exprs = Vec::new();
         for expr in expressions {
             let mut parser = Parser::new(expr);

@@ -161,7 +161,7 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
     }
 
     fn visit_id(&mut self, expr: &IdExpr) -> LoxResult<()> {
-        let constant = self.make_constant(Value::String(expr.name.lexeme.clone()));
+        let constant = self.make_constant(Value::String(expr.name.lexeme.to_string()));
         self.emit_op_with_arg(OpCode::GetGlobal, constant as i32);
         Ok(())
     }
@@ -169,7 +169,7 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
     fn visit_assign(&mut self, expr: &AssignExpr) -> LoxResult<()> {
         self.execute(&expr.right)?;
         if let Expr::Id(id_expr) = &*expr.left {
-            let constant = self.make_constant(Value::String(id_expr.name.lexeme.clone()));
+            let constant = self.make_constant(Value::String(id_expr.name.lexeme.to_string()));
             self.emit_op_with_arg(OpCode::SetGlobal, constant as i32);
         }
         Ok(())
@@ -199,7 +199,7 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
             for arg in &expr.arguments {
                 self.execute(arg)?;
             }
-            let constant = self.make_constant(Value::String(name.clone()));
+            let constant = self.make_constant(Value::String(name.to_string()));
             self.emit_op_with_arg(OpCode::Call, constant as i32);
         }
         Ok(())
@@ -224,7 +224,7 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
 
     fn visit_get(&mut self, expr: &GetExpr) -> LoxResult<()> {
         self.execute(&expr.object)?;
-        let constant = self.make_constant(Value::String(expr.name.lexeme.clone()));
+        let constant = self.make_constant(Value::String(expr.name.lexeme.to_string()));
         self.emit_op_with_arg(OpCode::GetProperty, constant as i32);
         Ok(())
     }
@@ -232,7 +232,7 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
     fn visit_set(&mut self, expr: &SetExpr) -> LoxResult<()> {
         self.execute(&expr.value)?;
         self.execute(&expr.object)?;
-        let constant = self.make_constant(Value::String(expr.name.lexeme.clone()));
+        let constant = self.make_constant(Value::String(expr.name.lexeme.to_string()));
         self.emit_op_with_arg(OpCode::SetProperty, constant as i32);
         Ok(())
     }

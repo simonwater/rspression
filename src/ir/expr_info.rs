@@ -2,15 +2,15 @@ use crate::expr::{AssignExpr, Expr, SetExpr};
 use crate::visitors::{VariableSet, VarsQuery};
 use std::collections::HashSet;
 
-pub struct ExprInfo {
+pub struct ExprInfo<'a> {
     reads: HashSet<String>,  // 依赖的变量 read
     writes: HashSet<String>, // 被赋值的变量 write
-    expr: Expr,
+    expr: Expr<'a>,
     index: usize,
 }
 
-impl ExprInfo {
-    pub fn new(expr: Expr, index: usize) -> Self {
+impl<'a> ExprInfo<'a> {
+    pub fn new(expr: Expr<'a>, index: usize) -> Self {
         let mut info = ExprInfo {
             reads: HashSet::new(),
             writes: HashSet::new(),
