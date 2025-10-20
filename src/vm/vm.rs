@@ -109,7 +109,7 @@ impl VM {
                 }
                 OpCode::Constant => {
                     let constant = self.read_constant(reader);
-                    self.push(constant);
+                    self.push(constant.clone());
                 }
                 OpCode::Pop => {
                     self.pop();
@@ -124,8 +124,8 @@ impl VM {
                     self.push(Value::Boolean(false));
                 }
                 OpCode::GetGlobal => {
-                    let name = self.read_string(reader);
-                    if let Some(value) = env.get(&name) {
+                    let name = self.read_str(reader);
+                    if let Some(value) = env.get(name) {
                         self.push(value.clone());
                     } else {
                         return Err(LoxError::RuntimeError {
@@ -134,16 +134,16 @@ impl VM {
                     }
                 }
                 OpCode::SetGlobal => {
-                    let name = self.read_string(reader);
+                    let name = self.read_str(reader);
                     let value = self.peek().clone();
-                    if !env.put(name.clone(), value) {
+                    if !env.put(name.to_string(), value) {
                         return Err(LoxError::RuntimeError {
                             message: format!("Undefined variable: {}, order: {}", name, exp_order),
                         });
                     }
                 }
                 OpCode::GetProperty => {
-                    let name = self.read_string(reader);
+                    let name = self.read_str(reader);
                     let object = self.pop();
                     if let Value::Instance(instance) = object {
                         if let Some(value) = instance.get(&name) {
@@ -166,11 +166,11 @@ impl VM {
                     }
                 }
                 OpCode::SetProperty => {
-                    let name = self.read_string(reader);
+                    let name = self.read_str(reader);
                     let object = self.pop();
                     if let Value::Instance(mut instance) = object {
                         let value = self.peek().clone();
-                        instance.set(name, value);
+                        instance.set(name.to_string(), value);
                     } else {
                         return Err(LoxError::RuntimeError {
                             message: format!(
@@ -195,7 +195,7 @@ impl VM {
                 OpCode::Not => self.pre_unary_op(TokenType::Bang)?,
                 OpCode::Negate => self.pre_unary_op(TokenType::Minus)?,
                 OpCode::Call => {
-                    let name = self.read_string(reader);
+                    let name = self.read_str(reader);
                     self.call_function(&name)?;
                 }
                 OpCode::JumpIfFalse => {
@@ -268,14 +268,14 @@ impl VM {
         LoxResult::Ok(())
     }
 
-    fn read_string(&mut self, reader: &mut ChunkReader) -> String {
+    fn read_str<'a>(&mut self, reader: &'a mut ChunkReader) -> &'a str {
         let value = self.read_constant(reader);
-        value.as_string().to_string()
+        value.as_str()
     }
 
-    fn read_constant(&mut self, reader: &mut ChunkReader) -> Value {
+    fn read_constant<'a>(&mut self, reader: &'a mut ChunkReader) -> &'a Value {
         let index = reader.read_int() as usize;
-        reader.read_const(index).clone()
+        reader.read_const(index)
     }
 
     fn read_code(&mut self, reader: &mut ChunkReader) -> OpCode {

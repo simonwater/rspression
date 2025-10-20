@@ -13,8 +13,8 @@ pub fn evaluate_binary(left: &Value, right: &Value, operator: &TokenType) -> Lox
             if left.is_string() || right.is_string() {
                 Ok(Value::String(format!(
                     "{}{}",
-                    left.as_string(),
-                    right.as_string()
+                    left.as_str(),
+                    right.as_str()
                 )))
             } else {
                 if left.is_double() || right.is_double() {

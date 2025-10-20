@@ -76,10 +76,10 @@ impl Value {
         }
     }
 
-    pub fn as_string(&self) -> String {
+    pub fn as_str(&self) -> &str {
         match self {
-            Value::String(s) => s.clone(),
-            _ => self.to_string(),
+            Value::String(s) => &s,
+            _ => "",
         }
     }
 
