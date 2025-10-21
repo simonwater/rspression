@@ -20,13 +20,15 @@ fn chunk_serialize_test() {
     let lines = create_formulas();
     let srcs: Vec<&str> = lines.iter().map(String::as_str).collect();
     println!("表达式总数：{}", lines.len());
-    println!("开始解析和分析：");
     let start = std::time::Instant::now();
     let mut runner = RspRunner::new();
     let exprs = runner.parse(&srcs).unwrap();
+    println!("解析完成。 耗时:{:?}", start.elapsed());
+
+    let start = std::time::Instant::now();
     let ana = Analyzer::new(exprs, true);
     let expr_infos = ana.analyze().unwrap();
-    println!("中间结果生成完成。 耗时:{:?}", start.elapsed());
+    println!("分析完成，生成中间结果。 耗时:{:?}", start.elapsed());
 
     let start = std::time::Instant::now();
     let chunk = runner.compile_ir(&expr_infos).unwrap();

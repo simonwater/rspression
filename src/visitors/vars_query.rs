@@ -152,7 +152,7 @@ mod tests {
             lines.push(expr);
         }
 
-        println!("开始解析公式...");
+        println!("开始解析公式.数量：{}", cnt);
         let start = Instant::now();
         let mut exprs = Vec::with_capacity(cnt);
         for line in &lines {
