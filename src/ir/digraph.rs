@@ -22,7 +22,7 @@ impl Digraph {
         self.v
     }
 
-    pub fn e(&self) -> usize {
+    pub fn _e(&self) -> usize {
         self.e
     }
 
@@ -45,7 +45,7 @@ impl Digraph {
         &self.adj[v]
     }
 
-    pub fn outdegree(&self, v: usize) -> usize {
+    pub fn _outdegree(&self, v: usize) -> usize {
         self.validate_vertex(v);
         self.adj[v].len()
     }
@@ -55,7 +55,7 @@ impl Digraph {
         self.indegree[v]
     }
 
-    pub fn reverse(&self) -> Digraph {
+    pub fn _reverse(&self) -> Digraph {
         let mut reverse = Digraph::new(self.v);
         for v in 0..self.v {
             for &w in &self.adj[v] {
@@ -130,7 +130,7 @@ impl<'a> TopologicalSort<'a> {
         true
     }
 
-    pub fn has_order(&self) -> bool {
+    pub fn _has_order(&self) -> bool {
         self.order.is_some()
     }
 

@@ -154,7 +154,7 @@ impl RspRunner {
         Ok(result)
     }
 
-    fn get_fields(&self, strs: &HashSet<String>) -> Vec<Rc<Field>> {
+    fn _get_fields(&self, strs: &HashSet<String>) -> Vec<Rc<Field>> {
         strs.iter().map(|str| Field::with_str(str)).collect()
     }
 }

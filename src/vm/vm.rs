@@ -48,7 +48,7 @@ impl VM {
         self.stack.last().unwrap_or(&Value::Null)
     }
 
-    fn peek_distance(&self, distance: usize) -> &Value {
+    fn _peek_distance(&self, distance: usize) -> &Value {
         if distance >= self.stack.len() {
             &Value::Null
         } else {

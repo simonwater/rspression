@@ -1,7 +1,7 @@
 use rspression::Chunk;
 use std::env;
 use std::fs::{self, File};
-use std::io::{BufWriter, Read, Write};
+use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 pub struct TestHelper;
@@ -12,16 +12,16 @@ impl TestHelper {
         output_dir.join(".temp").join(directory).join(file_name)
     }
 
-    pub fn write_string(content: &str, file_path: &Path) {
+    pub fn _write_string(content: &str, file_path: &Path) {
         Self::create_parent_if_not_exist(file_path);
         if let Ok(mut writer) = File::create(file_path) {
             let _ = writer.write_all(content.as_bytes());
         }
     }
 
-    pub fn write_all_lines(lines: &[String], file_path: &Path) {
+    pub fn _write_all_lines(lines: &[String], file_path: &Path) {
         Self::create_parent_if_not_exist(file_path);
-        if let Ok(mut writer) = File::create(file_path) {
+        if let Ok(writer) = File::create(file_path) {
             let mut bf_writer = BufWriter::new(writer);
             for line in lines {
                 let _ = writeln!(bf_writer, "{}", line);

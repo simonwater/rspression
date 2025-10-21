@@ -16,7 +16,7 @@ impl<T> Node<T> {
         }
     }
 
-    pub fn set_info(&mut self, info: T) {
+    pub fn _set_info(&mut self, info: T) {
         self.info = Some(info)
     }
 }
@@ -51,7 +51,7 @@ impl<T> NodeSet<T> {
         &mut self.nodes[self.cnt - 1]
     }
 
-    pub fn get_mut_node(&mut self, name: &str) -> Option<&mut Node<T>> {
+    pub fn _get_mut_node(&mut self, name: &str) -> Option<&mut Node<T>> {
         if let Some(&index) = self.nodes_map.get(name) {
             self.nodes.get_mut(index)
         } else {
@@ -65,7 +65,7 @@ impl<T> NodeSet<T> {
             .and_then(|&index| self.nodes.get(index))
     }
 
-    pub fn get_node_mut_by_index(&mut self, index: usize) -> Option<&mut Node<T>> {
+    pub fn _get_node_mut_by_index(&mut self, index: usize) -> Option<&mut Node<T>> {
         self.validate_index(index).ok()?;
         self.nodes.get_mut(index)
     }

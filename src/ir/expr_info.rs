@@ -1,5 +1,5 @@
-use crate::expr::{AssignExpr, Expr, SetExpr};
-use crate::visitors::{VariableSet, VarsQuery};
+use crate::expr::Expr;
+use crate::visitors::VarsQuery;
 use std::collections::HashSet;
 
 pub struct ExprInfo<'a> {

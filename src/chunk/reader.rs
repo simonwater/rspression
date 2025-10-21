@@ -6,7 +6,7 @@ pub struct ChunkReader<'a> {
     code: &'a [u8],
     ip: usize,
     const_pool: ConstantPool,
-    vars_bits: Vec<u8>,
+    _vars_bits: Vec<u8>,
 }
 
 impl<'a> ChunkReader<'a> {
@@ -15,7 +15,7 @@ impl<'a> ChunkReader<'a> {
             code,
             ip: 0,
             const_pool: ConstantPool::from_bytes(constants),
-            vars_bits: vars.to_vec(),
+            _vars_bits: vars.to_vec(),
         }
     }
 
