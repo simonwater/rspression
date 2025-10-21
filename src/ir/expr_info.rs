@@ -41,7 +41,7 @@ impl<'a> ExprInfo<'a> {
         &self.writes
     }
 
-    pub fn get_expr(&self) -> &Expr {
+    pub fn get_expr(&self) -> &Expr<'a> {
         &self.expr
     }
 

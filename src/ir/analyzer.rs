@@ -79,7 +79,7 @@ impl<'a> Analyzer<'a> {
         graph
     }
 
-    pub fn analyze(&self) -> RspResult<Vec<&ExprInfo>> {
+    pub fn analyze(&self) -> RspResult<Vec<&ExprInfo<'a>>> {
         if self.need_sort && !self.expr_infos.is_empty() && self.has_assign() {
             return self.sort();
         }
@@ -94,7 +94,7 @@ impl<'a> Analyzer<'a> {
         self.graph.v() > 0
     }
 
-    fn sort(&self) -> RspResult<Vec<&ExprInfo>> {
+    fn sort(&self) -> RspResult<Vec<&ExprInfo<'a>>> {
         let mut result = Vec::new();
         if self.graph.v() == 0 {
             return Ok(result);

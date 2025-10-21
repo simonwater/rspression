@@ -10,9 +10,6 @@ pub struct Digraph {
 
 impl Digraph {
     pub fn new(v: usize) -> Self {
-        if v < 0 {
-            panic!("Number of vertices in a Digraph must be non-negative");
-        }
         Digraph {
             v,
             e: 0,

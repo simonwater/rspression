@@ -34,12 +34,12 @@ impl OpCodeCompiler {
         self.var_set.clear();
     }
 
-    pub fn compile(&mut self, exprInfo: &ExprInfo) -> RspResult<()> {
-        let expr = exprInfo.get_expr();
-        let order = exprInfo.get_index();
+    pub fn compile(&mut self, expr_info: &ExprInfo) -> RspResult<()> {
+        let expr = expr_info.get_expr();
+        let order = expr_info.get_index();
         self.compile_expr(expr, order)?;
-        self.var_set.extend(exprInfo.get_reads().clone());
-        self.var_set.extend(exprInfo.get_writes().clone());
+        self.var_set.extend(expr_info.get_reads().clone());
+        self.var_set.extend(expr_info.get_writes().clone());
         Ok(())
     }
 

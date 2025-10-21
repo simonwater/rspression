@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::fmt;
-use std::rc::Rc;
 
 pub struct Node<T> {
     pub name: String,

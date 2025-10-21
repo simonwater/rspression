@@ -1,7 +1,7 @@
 use rspression::Chunk;
 use std::env;
 use std::fs::{self, File};
-use std::io::{self, BufWriter, Read, Write};
+use std::io::{BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 
 pub struct TestHelper;

@@ -1,6 +1,6 @@
 use crate::error::{RspError, RspResult};
 use crate::expr::{Expr, GetExpr};
-use crate::parser::precedence::{self, Precedence};
+use crate::parser::precedence::Precedence;
 use crate::parser::scanner::Scanner;
 use crate::{Token, TokenType, Value};
 use std::rc::Rc;
@@ -33,7 +33,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn expression_prec(&mut self, min_prec: i32) -> RspResult<Expr<'a>> {
-        self.advance();
+        self.advance()?;
         let mut lhs = self.parse_prefix(self.previous.clone())?;
         while self.current.token_type != TokenType::Eof {
             let precedence = self.get_precedence(&self.current.token_type);
@@ -41,7 +41,7 @@ impl<'a> Parser<'a> {
                 break;
             }
 
-            self.advance();
+            self.advance()?;
             lhs = self.parse_infix(lhs, self.previous.clone())?;
         }
 
@@ -224,7 +224,7 @@ impl<'a> Parser<'a> {
     pub fn match_token(&mut self, types: &[TokenType]) -> bool {
         for token_type in types {
             if self.check(token_type) {
-                self.advance();
+                self.advance().unwrap();
                 return true;
             }
         }
@@ -233,7 +233,7 @@ impl<'a> Parser<'a> {
 
     pub fn consume(&mut self, token_type: TokenType, message: &str) -> RspResult<Rc<Token<'a>>> {
         if self.check(&token_type) {
-            self.advance();
+            self.advance()?;
             Ok(self.previous.clone())
         } else {
             Err(RspError::ParseError {

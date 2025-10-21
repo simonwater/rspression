@@ -41,17 +41,17 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    // pub fn scan_tokens(&mut self) -> RspResult<Vec<Rc<Token>>> {
-    //     while !self.is_at_end() {
-    //         let token = self.next_token()?;
-    //         self.tokens.push(Rc::new(token));
-    //     }
+    pub fn scan_tokens(&mut self) -> RspResult<Vec<Rc<Token<'a>>>> {
+        while !self.is_at_end() {
+            let token = self.next_token()?;
+            self.tokens.push(Rc::new(token));
+        }
 
-    //     let token = Token::new(TokenType::Eof, "", None, self.line);
-    //     self.tokens.push(Rc::new(token));
+        let token = Token::new(TokenType::Eof, "", None, self.line);
+        self.tokens.push(Rc::new(token));
 
-    //     Ok(std::mem::take(&mut self.tokens))
-    // }
+        Ok(std::mem::take(&mut self.tokens))
+    }
 
     pub fn next_token(&mut self) -> RspResult<Token<'a>> {
         self.skip_whitespace();
