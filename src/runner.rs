@@ -1,5 +1,5 @@
 use crate::Field;
-use crate::LoxResult;
+use crate::RspResult;
 use crate::Value;
 use crate::chunk::Chunk;
 use crate::environment::{DefaultEnvironment, Environment};
@@ -12,7 +12,7 @@ use crate::vm::VM;
 use std::collections::HashSet;
 use std::rc::Rc;
 
-pub struct LoxRunner {
+pub struct RspRunner {
     need_sort: bool,
     execute_mode: ExecuteMode,
 }
@@ -23,7 +23,7 @@ pub enum ExecuteMode {
     ChunkVM,
 }
 
-impl LoxRunner {
+impl RspRunner {
     pub fn new() -> Self {
         Self {
             need_sort: true,
@@ -39,7 +39,7 @@ impl LoxRunner {
         self.execute_mode = mode;
     }
 
-    pub fn execute(&mut self, expression: &str) -> LoxResult<Value> {
+    pub fn execute(&mut self, expression: &str) -> RspResult<Value> {
         let mut env = DefaultEnvironment::new();
         self.execute_with_env(expression, &mut env)
     }
@@ -48,12 +48,12 @@ impl LoxRunner {
         &mut self,
         expression: &str,
         env: &mut E,
-    ) -> LoxResult<Value> {
+    ) -> RspResult<Value> {
         let results = self.execute_multiple_with_env(&[expression], env)?;
         Ok(results.into_iter().next().unwrap_or(Value::Null))
     }
 
-    pub fn execute_multiple(&mut self, expressions: &[&str]) -> LoxResult<Vec<Value>> {
+    pub fn execute_multiple(&mut self, expressions: &[&str]) -> RspResult<Vec<Value>> {
         let mut env = DefaultEnvironment::new();
         self.execute_multiple_with_env(expressions, &mut env)
     }
@@ -62,7 +62,7 @@ impl LoxRunner {
         &mut self,
         expressions: &[&str],
         env: &mut E,
-    ) -> LoxResult<Vec<Value>> {
+    ) -> RspResult<Vec<Value>> {
         let exprs = self.parse(expressions)?;
 
         let ana = Analyzer::new(exprs, self.need_sort);
@@ -81,7 +81,7 @@ impl LoxRunner {
         &mut self,
         expr_infos: &[&ExprInfo],
         env: &mut E,
-    ) -> LoxResult<Vec<Value>> {
+    ) -> RspResult<Vec<Value>> {
         // let mut variables = HashSet::new();
         // for info in expr_infos {
         //     variables.union(info.get_reads());
@@ -108,7 +108,7 @@ impl LoxRunner {
         &mut self,
         chunk: &Chunk,
         env: &mut E,
-    ) -> LoxResult<Vec<Value>> {
+    ) -> RspResult<Vec<Value>> {
         // let chunk_reader = ChunkReader::new(chunk, self.context.get_tracer());
         // let fields = self.get_fields(&chunk_reader.get_variables());
         // let flag = env.before_execute(&strs.iter().map(|str| str).collect());
@@ -127,7 +127,7 @@ impl LoxRunner {
         Ok(result)
     }
 
-    pub fn parse<'a>(&mut self, expressions: &[&'a str]) -> LoxResult<Vec<Expr<'a>>> {
+    pub fn parse<'a>(&mut self, expressions: &[&'a str]) -> RspResult<Vec<Expr<'a>>> {
         let mut exprs = Vec::new();
         for expr in expressions {
             let mut parser = Parser::new(expr);
@@ -137,14 +137,14 @@ impl LoxRunner {
         Ok(exprs)
     }
 
-    pub fn compile_source(&mut self, expressions: &[&str]) -> LoxResult<Chunk> {
+    pub fn compile_source(&mut self, expressions: &[&str]) -> RspResult<Chunk> {
         let exprs = self.parse(expressions)?;
         let ana = Analyzer::new(exprs, self.need_sort);
         let expr_infos = ana.analyze()?;
         self.compile_ir(&expr_infos)
     }
 
-    pub fn compile_ir(&mut self, expr_infos: &[&ExprInfo]) -> LoxResult<Chunk> {
+    pub fn compile_ir(&mut self, expr_infos: &[&ExprInfo]) -> RspResult<Chunk> {
         let mut compiler = OpCodeCompiler::new();
         compiler.begin_compile();
         for expr_info in expr_infos {
@@ -159,7 +159,7 @@ impl LoxRunner {
     }
 }
 
-impl Default for LoxRunner {
+impl Default for RspRunner {
     fn default() -> Self {
         Self::new()
     }

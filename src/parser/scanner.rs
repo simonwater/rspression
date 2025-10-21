@@ -1,4 +1,4 @@
-use crate::error::{LoxError, LoxResult};
+use crate::error::{RspError, RspResult};
 use crate::values::Value;
 use crate::{Token, TokenType};
 use std::iter::Peekable;
@@ -41,7 +41,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    // pub fn scan_tokens(&mut self) -> LoxResult<Vec<Rc<Token>>> {
+    // pub fn scan_tokens(&mut self) -> RspResult<Vec<Rc<Token>>> {
     //     while !self.is_at_end() {
     //         let token = self.next_token()?;
     //         self.tokens.push(Rc::new(token));
@@ -53,7 +53,7 @@ impl<'a> Scanner<'a> {
     //     Ok(std::mem::take(&mut self.tokens))
     // }
 
-    pub fn next_token(&mut self) -> LoxResult<Token<'a>> {
+    pub fn next_token(&mut self) -> RspResult<Token<'a>> {
         self.skip_whitespace();
         self.start = self.current;
         if self.is_at_end() {
@@ -92,7 +92,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn scan_token(&mut self) -> LoxResult<Token<'a>> {
+    fn scan_token(&mut self) -> RspResult<Token<'a>> {
         let c = self.current_char.unwrap_or('\0');
         match c {
             '(' => self.make_token(TokenType::LeftParen),
@@ -145,7 +145,7 @@ impl<'a> Scanner<'a> {
                 if self.match_char('|') {
                     self.make_token(TokenType::Or)
                 } else {
-                    return Err(LoxError::ParseError {
+                    return Err(RspError::ParseError {
                         line: self.line,
                         message: format!("Unexpected character: {}", c),
                     });
@@ -155,7 +155,7 @@ impl<'a> Scanner<'a> {
                 if self.match_char('&') {
                     self.make_token(TokenType::And)
                 } else {
-                    return Err(LoxError::ParseError {
+                    return Err(RspError::ParseError {
                         line: self.line,
                         message: format!("Unexpected character: {}", c),
                     });
@@ -166,7 +166,7 @@ impl<'a> Scanner<'a> {
             c if is_alpha(c) => self.identifier(),
             '\0' => Ok(Token::new(TokenType::Eof, "", None, self.line)),
             _ => {
-                return Err(LoxError::ParseError {
+                return Err(RspError::ParseError {
                     line: self.line,
                     message: format!("Unexpected character: {}", c),
                 });
@@ -174,7 +174,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn string(&mut self) -> LoxResult<Token<'a>> {
+    fn string(&mut self) -> RspResult<Token<'a>> {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
                 self.line += 1;
@@ -183,7 +183,7 @@ impl<'a> Scanner<'a> {
         }
 
         if self.is_at_end() {
-            return Err(LoxError::ParseError {
+            return Err(RspError::ParseError {
                 line: self.line,
                 message: "Unterminated string".to_string(),
             });
@@ -195,7 +195,7 @@ impl<'a> Scanner<'a> {
         Ok(self.token_with_literal(TokenType::String, Some(Value::String(value))))
     }
 
-    fn number(&mut self) -> LoxResult<Token<'a>> {
+    fn number(&mut self) -> RspResult<Token<'a>> {
         while self.peek().is_ascii_digit() {
             self.advance();
         }
@@ -210,7 +210,7 @@ impl<'a> Scanner<'a> {
                     self.advance();
                 }
             } else {
-                return Err(LoxError::ParseError {
+                return Err(RspError::ParseError {
                     line: self.line,
                     message: "Invalid number format".to_string(),
                 });
@@ -219,13 +219,13 @@ impl<'a> Scanner<'a> {
 
         let value_str = &self.source[self.start..self.current];
         let value = if is_double {
-            let d: f64 = value_str.parse().map_err(|_| LoxError::ParseError {
+            let d: f64 = value_str.parse().map_err(|_| RspError::ParseError {
                 line: self.line,
                 message: "Invalid number".to_string(),
             })?;
             Value::Double(d)
         } else {
-            let i: i32 = value_str.parse().map_err(|_| LoxError::ParseError {
+            let i: i32 = value_str.parse().map_err(|_| RspError::ParseError {
                 line: self.line,
                 message: "Invalid number".to_string(),
             })?;
@@ -235,7 +235,7 @@ impl<'a> Scanner<'a> {
         Ok(self.token_with_literal(TokenType::Number, Some(value)))
     }
 
-    fn identifier(&mut self) -> LoxResult<Token<'a>> {
+    fn identifier(&mut self) -> RspResult<Token<'a>> {
         while is_alpha_numeric(self.peek()) {
             self.advance();
         }
@@ -305,7 +305,7 @@ impl<'a> Scanner<'a> {
         if let Some(&c) = iter.peek() { c } else { '\0' }
     }
 
-    fn make_token(&mut self, token_type: TokenType) -> LoxResult<Token<'a>> {
+    fn make_token(&mut self, token_type: TokenType) -> RspResult<Token<'a>> {
         Ok(self.token_with_literal(token_type, None))
     }
 

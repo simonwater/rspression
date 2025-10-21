@@ -3,7 +3,7 @@ mod common;
 use common::TestHelper;
 use rand::Rng;
 use rspression::Chunk;
-use rspression::LoxRunner;
+use rspression::RspRunner;
 use rspression::ir::{Analyzer, ExprInfo};
 use rspression::{DefaultEnvironment, Environment};
 
@@ -22,7 +22,7 @@ fn chunk_serialize_test() {
     println!("表达式总数：{}", lines.len());
     println!("开始解析和分析：");
     let start = std::time::Instant::now();
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
     let exprs = runner.parse(&srcs).unwrap();
     let ana = Analyzer::new(exprs, true);
     let expr_infos = ana.analyze().unwrap();
@@ -53,7 +53,7 @@ fn test_chunk(chunk: &Chunk) {
 
     println!("开始执行字节码：");
     let start = std::time::Instant::now();
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
     let mut env = get_environment();
     runner.run_chunk(&chunk, &mut env).unwrap();
     check_result(&env);
@@ -67,7 +67,7 @@ fn test_syntax_tree(expr_infos: &[&ExprInfo]) {
     println!("开始执行语法树");
     let start = std::time::Instant::now();
     let mut env = get_environment();
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
     runner.run_ir(expr_infos, &mut env).unwrap();
     check_result(&env);
     println!("语法树执行完成。 耗时:{:?}", start.elapsed());

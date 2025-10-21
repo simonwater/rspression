@@ -2,7 +2,7 @@ mod common;
 
 use common::TestHelper;
 use rand::Rng;
-use rspression::{Chunk, DefaultEnvironment, Environment, ExecuteMode, LoxRunner};
+use rspression::{Chunk, DefaultEnvironment, Environment, ExecuteMode, RspRunner};
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -15,7 +15,7 @@ fn test_ir() {
     let lines = get_expressions();
     let srcs: Vec<&str> = lines.iter().map(String::as_str).collect();
     let start = Instant::now();
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
     runner.set_execute_mode(ExecuteMode::SyntaxTree);
     let mut env = get_env();
     runner.execute_multiple_with_env(&srcs, &mut env).unwrap();
@@ -29,7 +29,7 @@ fn test_compile_chunk() {
     println!("批量运算测试(编译+字节码执行)");
     let lines = get_expressions();
     let srcs: Vec<&str> = lines.iter().map(String::as_str).collect();
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
     let start = std::time::Instant::now();
     let chunk = runner.compile_source(&srcs).unwrap();
     println!("编译用时: {:?}", start.elapsed());
@@ -58,7 +58,7 @@ fn test_file_chunk() {
     let start = std::time::Instant::now();
     let cnt = 1;
     for _ in 0..cnt {
-        let mut runner = LoxRunner::new();
+        let mut runner = RspRunner::new();
         let mut env = get_env();
         runner.run_chunk(&chunk, &mut env).unwrap();
         check_values(&env);
@@ -74,7 +74,7 @@ fn test_file_chunk() {
 fn create_and_get_chunk(path: &PathBuf) -> Chunk {
     let lines = get_expressions();
     let srcs: Vec<&str> = lines.iter().map(String::as_str).collect();
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
     let start = std::time::Instant::now();
     let chunk = runner.compile_source(&srcs).unwrap();
     println!("编译完成，耗时：{:?}", start.elapsed());

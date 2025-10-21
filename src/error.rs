@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum LoxError {
+pub enum RspError {
     #[error("Parse error at line {line}: {message}")]
     ParseError { line: usize, message: String },
 
@@ -18,4 +18,4 @@ pub enum LoxError {
     IoError(#[from] std::io::Error),
 }
 
-pub type LoxResult<T> = Result<T, LoxError>;
+pub type RspResult<T> = Result<T, RspError>;

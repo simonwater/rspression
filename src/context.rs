@@ -1,14 +1,14 @@
 use crate::ir::{ExecuteContext, ExprInfo};
 use crate::tracer::Tracer;
 
-pub struct LoxContext {
+pub struct RspContext {
     tracer: Tracer,
     exec_context: ExecuteContext,
 }
 
-impl LoxContext {
+impl RspContext {
     pub fn new() -> Self {
-        let mut ctx = LoxContext {
+        let mut ctx = RspContext {
             tracer: Tracer::new(),
             exec_context: ExecuteContext::new_dummy(), // 先用 dummy，后面再初始化
         };
@@ -29,10 +29,10 @@ impl LoxContext {
     }
 }
 
-// 需要为 LoxContext 实现 Clone trait
-impl Clone for LoxContext {
+// 需要为 RspContext 实现 Clone trait
+impl Clone for RspContext {
     fn clone(&self) -> Self {
-        LoxContext {
+        RspContext {
             tracer: self.tracer.clone(),
             exec_context: self.exec_context.clone(),
         }

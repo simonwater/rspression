@@ -1,4 +1,4 @@
-use crate::error::{LoxError, LoxResult};
+use crate::error::{RspError, RspResult};
 use crate::expr::{Expr, GetExpr};
 use crate::parser::precedence::{self, Precedence};
 use crate::parser::scanner::Scanner;
@@ -20,11 +20,11 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse(&mut self) -> LoxResult<Expr<'a>> {
+    pub fn parse(&mut self) -> RspResult<Expr<'a>> {
         self.advance()?;
         let result = self.expression_prec(Precedence::PREC_NONE)?;
         if self.current.token_type != TokenType::Eof {
-            return Err(LoxError::ParseError {
+            return Err(RspError::ParseError {
                 line: self.current.line,
                 message: format!("Unknown token: {:?}", self.current),
             });
@@ -32,7 +32,7 @@ impl<'a> Parser<'a> {
         Ok(result)
     }
 
-    pub fn expression_prec(&mut self, min_prec: i32) -> LoxResult<Expr<'a>> {
+    pub fn expression_prec(&mut self, min_prec: i32) -> RspResult<Expr<'a>> {
         self.advance();
         let mut lhs = self.parse_prefix(self.previous.clone())?;
         while self.current.token_type != TokenType::Eof {
@@ -67,7 +67,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_prefix(&mut self, token: Rc<Token<'a>>) -> LoxResult<Expr<'a>> {
+    fn parse_prefix(&mut self, token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
         match token.token_type {
             TokenType::Number
             | TokenType::String
@@ -78,14 +78,14 @@ impl<'a> Parser<'a> {
             TokenType::LeftParen => self.group(token),
             TokenType::Minus | TokenType::Bang => self.unary(token, Precedence::PREC_UNARY),
             TokenType::If => self.if_(token),
-            _ => Err(LoxError::ParseError {
+            _ => Err(RspError::ParseError {
                 line: token.line,
                 message: format!("Unknown token: {:?}", token),
             }),
         }
     }
 
-    fn parse_infix(&mut self, lhs: Expr<'a>, token: Rc<Token<'a>>) -> LoxResult<Expr<'a>> {
+    fn parse_infix(&mut self, lhs: Expr<'a>, token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
         match token.token_type {
             TokenType::Plus | TokenType::Minus => {
                 self.binary(lhs, token, Precedence::PREC_TERM, false)
@@ -108,14 +108,14 @@ impl<'a> Parser<'a> {
             }
             TokenType::LeftParen => self.call(lhs, token),
             TokenType::Dot => self.get(lhs, token),
-            _ => Err(LoxError::ParseError {
+            _ => Err(RspError::ParseError {
                 line: token.line,
                 message: format!("Unknown infix operator: {:?}", token),
             }),
         }
     }
 
-    fn assign(&mut self, lhs: Expr<'a>, token: Rc<Token<'a>>) -> LoxResult<Expr<'a>> {
+    fn assign(&mut self, lhs: Expr<'a>, token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
         // 右结合，优先级降低一位，有连续等号时先解析后面的
         let rhs = self.expression_prec(Precedence::PREC_ASSIGNMENT - 1)?;
 
@@ -132,12 +132,12 @@ impl<'a> Parser<'a> {
         token: Rc<Token<'a>>,
         precedence: i32,
         is_right: bool,
-    ) -> LoxResult<Expr<'a>> {
+    ) -> RspResult<Expr<'a>> {
         let rhs = self.expression_prec(if is_right { precedence - 1 } else { precedence })?;
         Ok(Expr::binary(lhs, token.clone(), rhs))
     }
 
-    fn call(&mut self, callee: Expr<'a>, _token: Rc<Token<'a>>) -> LoxResult<Expr<'a>> {
+    fn call(&mut self, callee: Expr<'a>, _token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
         let mut arguments = Vec::new();
 
         if !self.check(&crate::TokenType::RightParen) {
@@ -156,7 +156,7 @@ impl<'a> Parser<'a> {
         Ok(Expr::call(callee, arguments, paren))
     }
 
-    fn get(&mut self, object: Expr<'a>, _token: Rc<Token<'a>>) -> LoxResult<Expr<'a>> {
+    fn get(&mut self, object: Expr<'a>, _token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
         let name = self.consume(
             crate::TokenType::Identifier,
             "Expect property name after '.'",
@@ -164,17 +164,17 @@ impl<'a> Parser<'a> {
         Ok(Expr::get(object, name))
     }
 
-    fn group(&mut self, _token: Rc<Token<'a>>) -> LoxResult<Expr<'a>> {
+    fn group(&mut self, _token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
         let expr = self.expression_prec(Precedence::PREC_NONE)?;
         self.consume(TokenType::RightParen, "Expected ')' after expression")?;
         Ok(expr)
     }
 
-    fn id(&mut self, token: Rc<Token<'a>>) -> LoxResult<Expr<'a>> {
+    fn id(&mut self, token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
         Ok(Expr::id(token.clone()))
     }
 
-    fn if_(&mut self, _token: Rc<Token<'a>>) -> LoxResult<Expr<'a>> {
+    fn if_(&mut self, _token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
         self.consume(crate::TokenType::LeftParen, "Expected '(' after 'if'")?;
         let condition = self.expression_prec(Precedence::PREC_NONE)?;
         self.consume(crate::TokenType::Comma, "Expected ',' after condition")?;
@@ -188,7 +188,7 @@ impl<'a> Parser<'a> {
         Ok(Expr::if_expr(condition, then_branch, Some(else_branch)))
     }
 
-    fn literal(&mut self, token: Rc<Token<'a>>) -> LoxResult<Expr<'a>> {
+    fn literal(&mut self, token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
         let value = match token.token_type {
             TokenType::Number | TokenType::String => token.literal.clone().unwrap_or(Value::Null),
             TokenType::True => Value::Boolean(true),
@@ -204,18 +204,18 @@ impl<'a> Parser<'a> {
         lhs: Expr<'a>,
         token: Rc<Token<'a>>,
         precedence: i32,
-    ) -> LoxResult<Expr<'a>> {
+    ) -> RspResult<Expr<'a>> {
         let rhs = self.expression_prec(precedence)?;
         Ok(Expr::logic(lhs, token.clone(), rhs))
     }
 
-    fn unary(&mut self, token: Rc<Token<'a>>, precedence: i32) -> LoxResult<Expr<'a>> {
+    fn unary(&mut self, token: Rc<Token<'a>>, precedence: i32) -> RspResult<Expr<'a>> {
         let rhs = self.expression_prec(precedence)?;
         Ok(Expr::unary(token.clone(), rhs))
     }
 
-    pub fn parse_err(&self, message: String) -> LoxError {
-        LoxError::ParseError {
+    pub fn parse_err(&self, message: String) -> RspError {
+        RspError::ParseError {
             line: self.current.line,
             message,
         }
@@ -231,19 +231,19 @@ impl<'a> Parser<'a> {
         false
     }
 
-    pub fn consume(&mut self, token_type: TokenType, message: &str) -> LoxResult<Rc<Token<'a>>> {
+    pub fn consume(&mut self, token_type: TokenType, message: &str) -> RspResult<Rc<Token<'a>>> {
         if self.check(&token_type) {
             self.advance();
             Ok(self.previous.clone())
         } else {
-            Err(LoxError::ParseError {
+            Err(RspError::ParseError {
                 line: self.current.line,
                 message: message.to_string(),
             })
         }
     }
 
-    fn advance(&mut self) -> LoxResult<()> {
+    fn advance(&mut self) -> RspResult<()> {
         self.previous = self.current.clone();
 
         if !self.is_at_end() {

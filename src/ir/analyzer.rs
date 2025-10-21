@@ -2,7 +2,7 @@ use super::digraph::{Digraph, TopologicalSort};
 use crate::expr::Expr;
 use crate::ir::ExprInfo;
 use crate::ir::node_set::{Node, NodeSet};
-use crate::{LoxError, LoxResult};
+use crate::{RspError, RspResult};
 
 pub struct Analyzer<'a> {
     expr_infos: Vec<ExprInfo<'a>>,
@@ -79,7 +79,7 @@ impl<'a> Analyzer<'a> {
         graph
     }
 
-    pub fn analyze(&self) -> LoxResult<Vec<&ExprInfo>> {
+    pub fn analyze(&self) -> RspResult<Vec<&ExprInfo>> {
         if self.need_sort && !self.expr_infos.is_empty() && self.has_assign() {
             return self.sort();
         }
@@ -94,7 +94,7 @@ impl<'a> Analyzer<'a> {
         self.graph.v() > 0
     }
 
-    fn sort(&self) -> LoxResult<Vec<&ExprInfo>> {
+    fn sort(&self) -> RspResult<Vec<&ExprInfo>> {
         let mut result = Vec::new();
         if self.graph.v() == 0 {
             return Ok(result);
@@ -103,7 +103,7 @@ impl<'a> Analyzer<'a> {
         let mut top_sorter = TopologicalSort::new(&self.graph);
 
         if !top_sorter.sort() {
-            return Err(LoxError::AnalyzeError {
+            return Err(RspError::AnalyzeError {
                 message: format!("{}", "公式列表存在循环引用！"),
             });
         }
@@ -134,7 +134,7 @@ impl<'a> Analyzer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{DefaultEnvironment, Environment, LoxRunner};
+    use crate::{DefaultEnvironment, Environment, RspRunner};
 
     #[test]
     fn test1() {
@@ -149,7 +149,7 @@ mod tests {
             println!("{}", expression);
         }
 
-        let mut runner = LoxRunner::new();
+        let mut runner = RspRunner::new();
         let exprs = runner.parse(&srcs).unwrap();
         let ana = Analyzer::new(exprs, true);
         let expr_infos = ana.analyze().unwrap();
@@ -163,7 +163,7 @@ mod tests {
         assert_eq!("c = n + w + b", srcs[expr_infos[2].get_index()]);
         assert_eq!("x = y = a + b * c", srcs[expr_infos[3].get_index()]);
 
-        runner = LoxRunner::new();
+        runner = RspRunner::new();
         let mut env = DefaultEnvironment::new();
         env.put("m".to_string(), 2.into());
         env.put("n".to_string(), 4.into());
@@ -192,7 +192,7 @@ mod tests {
             println!("{}", expression);
         }
 
-        let mut runner = LoxRunner::new();
+        let mut runner = RspRunner::new();
         let exprs = runner.parse(&srcs).unwrap();
         let ana = Analyzer::new(exprs, true);
         let expr_infos = ana.analyze().unwrap();
@@ -208,7 +208,7 @@ mod tests {
         assert_eq!("b * 2 + 1", srcs[expr_infos[4].get_index()]);
         assert_eq!("a * b + c", srcs[expr_infos[5].get_index()]);
 
-        runner = LoxRunner::new();
+        runner = RspRunner::new();
         let mut env = DefaultEnvironment::new();
         env.put("m".to_string(), 2.into());
         env.put("n".to_string(), 4.into());

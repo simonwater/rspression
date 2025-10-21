@@ -1,8 +1,8 @@
-use rspression::{DefaultEnvironment, Environment, LoxRunner, Value};
+use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
 
 #[test]
 fn test_basic_arithmetic() {
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
     assert_eq!(3, runner.execute("//a\n1 + 2").unwrap().as_integer());
     assert_eq!(Value::Integer(3), runner.execute("1 + 2").unwrap());
     assert_eq!(Value::Integer(2), runner.execute("5 - 3").unwrap());
@@ -36,7 +36,7 @@ fn test_basic_arithmetic() {
 
 #[test]
 fn test_variables() {
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
     let mut env = DefaultEnvironment::new();
 
     env.put("a".to_string(), Value::Integer(1));
@@ -64,7 +64,7 @@ fn test_variables() {
 
 #[test]
 fn test_strings() {
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
 
     let result = runner.execute("\"aa\" + \"bb\"").unwrap();
     assert_eq!(result, Value::String("aabb".to_string()));
@@ -75,7 +75,7 @@ fn test_strings() {
 
 #[test]
 fn test_comparison() {
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
 
     let result = runner.execute("5 > 3").unwrap();
     assert_eq!(result, Value::Boolean(true));
@@ -92,7 +92,7 @@ fn test_comparison() {
 
 #[test]
 fn test_logical_operations() {
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
 
     let result = runner.execute("true && false").unwrap();
     assert_eq!(result, Value::Boolean(false));
@@ -120,7 +120,7 @@ fn test_muilti_evaluate() {
     lines.push("a * 2 + (b - c)");
     lines.push("x = y = a + b * c");
 
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
     let r = runner.execute_multiple_with_env(&lines, &mut env).unwrap();
     assert_eq!(Value::Double(3.0), r[0]);
     assert_eq!(Value::Boolean(true), r[1]);
@@ -141,7 +141,7 @@ fn test_calculation() {
     srcs.push("b = a * 2");
     srcs.push("c = n + w");
 
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
     let mut env = DefaultEnvironment::new();
     env.put("m".to_string(), Value::Integer(2));
     env.put("n".to_string(), Value::Integer(4));

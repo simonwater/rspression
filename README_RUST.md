@@ -1,6 +1,6 @@
-# Loxpression Rust Implementation
+# Rsppression Rust Implementation
 
-This is a Rust port of the Loxpression Java expression evaluation engine. The Rust version maintains the same core functionality while leveraging Rust's type system and memory safety features.
+This is a Rust port of the Rsppression Java expression evaluation engine. The Rust version maintains the same core functionality while leveraging Rust's type system and memory safety features.
 
 ## Features
 
@@ -36,9 +36,9 @@ The Rust implementation follows the same architecture as the Java version:
 ### Basic Expression Evaluation
 
 ```rust
-use loxpression::{LoxRunner, Value};
+use rsppression::{RspRunner, Value};
 
-let mut runner = LoxRunner::new();
+let mut runner = RspRunner::new();
 let result = runner.execute("1 + 2 * 3")?;
 println!("Result: {}", result); // Output: 7
 ```
@@ -46,9 +46,9 @@ println!("Result: {}", result); // Output: 7
 ### With Variables
 
 ```rust
-use loxpression::{LoxRunner, DefaultEnvironment, Value, Environment};
+use rsppression::{RspRunner, DefaultEnvironment, Value, Environment};
 
-let mut runner = LoxRunner::new();
+let mut runner = RspRunner::new();
 let mut env = DefaultEnvironment::new();
 
 // Define variables
@@ -112,14 +112,14 @@ The Rust implementation provides several performance advantages:
 The Rust version uses explicit error handling with the `Result` type:
 
 ```rust
-use loxpression::{LoxRunner, LoxError};
+use rsppression::{RspRunner, RspError};
 
 match runner.execute("invalid expression") {
     Ok(result) => println!("Result: {}", result),
-    Err(LoxError::ParseError { line, message }) => {
+    Err(RspError::ParseError { line, message }) => {
         eprintln!("Parse error at line {}: {}", line, message);
     }
-    Err(LoxError::RuntimeError { message }) => {
+    Err(RspError::RuntimeError { message }) => {
         eprintln!("Runtime error: {}", message);
     }
     Err(e) => eprintln!("Other error: {}", e),
@@ -132,9 +132,9 @@ The Rust implementation is designed to be thread-safe:
 
 ```rust
 use std::sync::Arc;
-use loxpression::{LoxRunner, DefaultEnvironment, Value, Environment};
+use rsppression::{RspRunner, DefaultEnvironment, Value, Environment};
 
-let runner = Arc::new(LoxRunner::new());
+let runner = Arc::new(RspRunner::new());
 let env = Arc::new(std::sync::Mutex::new(DefaultEnvironment::new()));
 
 // Safe to use across threads

@@ -1,5 +1,5 @@
 use crate::environment::Environment;
-use crate::error::{LoxError, LoxResult};
+use crate::error::{RspError, RspResult};
 
 use crate::TokenType;
 use crate::expr::Visitor;
@@ -19,21 +19,21 @@ impl<'a, E: Environment> Evaluator<'a, E> {
         Self { environment }
     }
 
-    pub fn evaluate(&mut self, expr: &Expr) -> LoxResult<Value> {
+    pub fn evaluate(&mut self, expr: &Expr) -> RspResult<Value> {
         expr.accept(self)
     }
 
-    fn call_function(&self, _callee: Value, _arguments: Vec<Value>) -> LoxResult<Value> {
+    fn call_function(&self, _callee: Value, _arguments: Vec<Value>) -> RspResult<Value> {
         // For now, we'll implement basic function calling
         // In a full implementation, this would handle built-in functions
-        Err(crate::error::LoxError::RuntimeError {
+        Err(crate::error::RspError::RuntimeError {
             message: "Function calling not implemented".to_string(),
         })
     }
 }
 
-impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
-    fn visit_binary(&mut self, expr: &BinaryExpr) -> LoxResult<Value> {
+impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
+    fn visit_binary(&mut self, expr: &BinaryExpr) -> RspResult<Value> {
         let BinaryExpr {
             left,
             operator,
@@ -44,7 +44,7 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
         value_helper::evaluate_binary(&left_val, &right_val, &operator.token_type)
     }
 
-    fn visit_logic(&mut self, expr: &LogicExpr) -> LoxResult<Value> {
+    fn visit_logic(&mut self, expr: &LogicExpr) -> RspResult<Value> {
         let LogicExpr {
             left,
             operator,
@@ -67,24 +67,24 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
                     self.evaluate(right)
                 }
             }
-            _ => Err(crate::error::LoxError::RuntimeError {
+            _ => Err(crate::error::RspError::RuntimeError {
                 message: "Invalid logical operator".to_string(),
             }),
         }
     }
 
-    fn visit_literal(&mut self, expr: &LiteralExpr) -> LoxResult<Value> {
+    fn visit_literal(&mut self, expr: &LiteralExpr) -> RspResult<Value> {
         let LiteralExpr { value } = expr;
         Ok(value.clone())
     }
 
-    fn visit_unary(&mut self, expr: &UnaryExpr) -> LoxResult<Value> {
+    fn visit_unary(&mut self, expr: &UnaryExpr) -> RspResult<Value> {
         let UnaryExpr { operator, right } = expr;
         let right_val = self.evaluate(right)?;
         value_helper::evaluate_unary(&right_val, &operator.token_type)
     }
 
-    fn visit_id(&mut self, expr: &IdExpr) -> LoxResult<Value> {
+    fn visit_id(&mut self, expr: &IdExpr) -> RspResult<Value> {
         let IdExpr { name } = expr;
         Ok(self
             .environment
@@ -93,7 +93,7 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
             .clone())
     }
 
-    fn visit_assign(&mut self, expr: &AssignExpr) -> LoxResult<Value> {
+    fn visit_assign(&mut self, expr: &AssignExpr) -> RspResult<Value> {
         let AssignExpr { left, right, .. } = expr;
         if let Expr::Id(IdExpr { name }) = &**left {
             // Variable assignment
@@ -101,13 +101,13 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
             self.environment.put(name.lexeme.to_string(), value.clone());
             return Ok(value);
         } else {
-            Err(LoxError::RuntimeError {
+            Err(RspError::RuntimeError {
                 message: "Invalic assign expression".to_string(),
             })
         }
     }
 
-    fn visit_call(&mut self, expr: &CallExpr) -> LoxResult<Value> {
+    fn visit_call(&mut self, expr: &CallExpr) -> RspResult<Value> {
         let CallExpr {
             callee, arguments, ..
         } = expr;
@@ -119,7 +119,7 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
         self.call_function(callee_val, arg_values)
     }
 
-    fn visit_if(&mut self, expr: &IfExpr) -> LoxResult<Value> {
+    fn visit_if(&mut self, expr: &IfExpr) -> RspResult<Value> {
         let IfExpr {
             condition,
             then_branch,
@@ -136,19 +136,19 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
         }
     }
 
-    fn visit_get(&mut self, expr: &GetExpr) -> LoxResult<Value> {
+    fn visit_get(&mut self, expr: &GetExpr) -> RspResult<Value> {
         let GetExpr { object, name } = expr;
         let object_val = self.evaluate(object)?;
         if let Some(instance) = object_val.as_instance() {
             Ok(instance.get(&name.lexeme).unwrap().clone())
         } else {
-            Err(crate::error::LoxError::RuntimeError {
+            Err(crate::error::RspError::RuntimeError {
                 message: "Only instances have properties".to_string(),
             })
         }
     }
 
-    fn visit_set(&mut self, expr: &SetExpr) -> LoxResult<Value> {
+    fn visit_set(&mut self, expr: &SetExpr) -> RspResult<Value> {
         let SetExpr {
             object,
             name,
@@ -161,7 +161,7 @@ impl<'a, E: Environment> Visitor<LoxResult<Value>> for Evaluator<'a, E> {
             instance.set(name.lexeme.to_string(), value_val.clone());
             Ok(value_val)
         } else {
-            Err(crate::error::LoxError::RuntimeError {
+            Err(crate::error::RspError::RuntimeError {
                 message: "Only instances have fields".to_string(),
             })
         }

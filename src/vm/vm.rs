@@ -1,8 +1,8 @@
 use crate::{
-    LoxResult,
+    RspResult,
     chunk::{Chunk, ChunkReader},
     environment::{DefaultEnvironment, Environment},
-    error::LoxError,
+    error::RspError,
     functions::FunctionManager,
     parser::TokenType,
     values::{Value, value_helper},
@@ -56,13 +56,13 @@ impl VM {
         }
     }
 
-    pub fn execute(&mut self, chunk: &Chunk) -> LoxResult<Vec<ExResult>> {
+    pub fn execute(&mut self, chunk: &Chunk) -> RspResult<Vec<ExResult>> {
         let mut reader = ChunkReader::new(&chunk.codes, &chunk.constants, &chunk.vars);
         let mut env = DefaultEnvironment::new();
         self.run(&mut reader, &mut env)
     }
 
-    pub fn execute_reader(&mut self, reader: &mut ChunkReader) -> LoxResult<Vec<ExResult>> {
+    pub fn execute_reader(&mut self, reader: &mut ChunkReader) -> RspResult<Vec<ExResult>> {
         self.reset();
         let mut env = DefaultEnvironment::new();
         self.run(reader, &mut env)
@@ -72,7 +72,7 @@ impl VM {
         &mut self,
         chunk: &Chunk,
         env: &mut E,
-    ) -> LoxResult<Vec<ExResult>> {
+    ) -> RspResult<Vec<ExResult>> {
         let mut reader = ChunkReader::new(&chunk.codes, &chunk.constants, &chunk.vars);
         self.run(&mut reader, env)
     }
@@ -81,7 +81,7 @@ impl VM {
         &mut self,
         reader: &mut ChunkReader,
         env: &mut E,
-    ) -> LoxResult<Vec<ExResult>> {
+    ) -> RspResult<Vec<ExResult>> {
         self.run(reader, env)
     }
 
@@ -89,7 +89,7 @@ impl VM {
         &mut self,
         reader: &mut ChunkReader,
         env: &mut E,
-    ) -> LoxResult<Vec<ExResult>> {
+    ) -> RspResult<Vec<ExResult>> {
         let mut result = Vec::new();
         let mut exp_order = 0;
         self.reset();
@@ -128,7 +128,7 @@ impl VM {
                     if let Some(value) = env.get(name) {
                         self.push(value.clone());
                     } else {
-                        return Err(LoxError::RuntimeError {
+                        return Err(RspError::RuntimeError {
                             message: format!("Undefined variable: {}, order: {}", name, exp_order),
                         });
                     }
@@ -137,7 +137,7 @@ impl VM {
                     let name = self.read_str(reader);
                     let value = self.peek().clone();
                     if !env.put(name.to_string(), value) {
-                        return Err(LoxError::RuntimeError {
+                        return Err(RspError::RuntimeError {
                             message: format!("Undefined variable: {}, order: {}", name, exp_order),
                         });
                     }
@@ -149,7 +149,7 @@ impl VM {
                         if let Some(value) = instance.get(&name) {
                             self.push(value.clone());
                         } else {
-                            return Err(LoxError::RuntimeError {
+                            return Err(RspError::RuntimeError {
                                 message: format!(
                                     "Undefined property: {}, order: {}",
                                     name, exp_order
@@ -157,7 +157,7 @@ impl VM {
                             });
                         }
                     } else {
-                        return Err(LoxError::RuntimeError {
+                        return Err(RspError::RuntimeError {
                             message: format!(
                                 "Only instances have properties. error: {}, order: {}",
                                 name, exp_order
@@ -172,7 +172,7 @@ impl VM {
                         let value = self.peek().clone();
                         instance.set(name.to_string(), value);
                     } else {
-                        return Err(LoxError::RuntimeError {
+                        return Err(RspError::RuntimeError {
                             message: format!(
                                 "Only instances have properties. error: {}, order: {}",
                                 name, exp_order
@@ -213,7 +213,7 @@ impl VM {
                 }
                 OpCode::Exit => {
                     if !self.stack.is_empty() {
-                        return Err(LoxError::RuntimeError {
+                        return Err(RspError::RuntimeError {
                             message: format!(
                                 "VM state error, stack not empty: {}",
                                 self.stack.len()
@@ -223,7 +223,7 @@ impl VM {
                     return Ok(result);
                 }
                 _ => {
-                    return Err(LoxError::RuntimeError {
+                    return Err(RspError::RuntimeError {
                         message: format!("Unknown instruction: {:?}, order: {}", op, exp_order),
                     });
                 }
@@ -231,11 +231,11 @@ impl VM {
         }
     }
 
-    fn call_function(&mut self, name: &str) -> LoxResult<()> {
+    fn call_function(&mut self, name: &str) -> RspResult<()> {
         let arity = if let Some(function) = self.function_manager.get(name) {
             function.arity()
         } else {
-            return Err(LoxError::RuntimeError {
+            return Err(RspError::RuntimeError {
                 message: format!("Undefined function: {}", name),
             });
         };
@@ -250,22 +250,22 @@ impl VM {
             let result = function.call(arguments);
             self.push(result);
         }
-        LoxResult::Ok(())
+        RspResult::Ok(())
     }
 
-    fn binary_op(&mut self, op_type: TokenType) -> LoxResult<()> {
+    fn binary_op(&mut self, op_type: TokenType) -> RspResult<()> {
         let b = self.pop();
         let a = self.pop();
         let result = value_helper::evaluate_binary(&a, &b, &op_type)?;
         self.push(result);
-        LoxResult::Ok(())
+        RspResult::Ok(())
     }
 
-    fn pre_unary_op(&mut self, op_type: TokenType) -> LoxResult<()> {
+    fn pre_unary_op(&mut self, op_type: TokenType) -> RspResult<()> {
         let operand = self.pop();
         let result = value_helper::evaluate_unary(&operand, &op_type)?;
         self.push(result);
-        LoxResult::Ok(())
+        RspResult::Ok(())
     }
 
     fn read_str<'a>(&mut self, reader: &'a mut ChunkReader) -> &'a str {

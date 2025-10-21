@@ -1,4 +1,4 @@
-//! Loxpression - A high-performance expression evaluation engine
+//! Rsppression - A high-performance expression evaluation engine
 //!
 //! This crate provides a fast and lightweight expression evaluation engine
 //! that supports both syntax tree interpretation and bytecode virtual machine execution.
@@ -18,8 +18,8 @@ pub mod vm;
 
 pub use chunk::Chunk;
 pub use environment::{DefaultEnvironment, Environment};
-pub use error::{LoxError, LoxResult};
+pub use error::{RspError, RspResult};
 pub use field::Field;
 pub use parser::{Parser, Scanner, Token, TokenType};
-pub use runner::{ExecuteMode, LoxRunner};
+pub use runner::{ExecuteMode, RspRunner};
 pub use values::Value;

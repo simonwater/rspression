@@ -1,12 +1,12 @@
-use crate::LoxResult;
+use crate::RspResult;
 use crate::TokenType;
 use crate::Value;
 
-pub fn evaluate_binary(left: &Value, right: &Value, operator: &TokenType) -> LoxResult<Value> {
+pub fn evaluate_binary(left: &Value, right: &Value, operator: &TokenType) -> RspResult<Value> {
     match operator {
         TokenType::Plus => {
             if !left.is_number() && !left.is_string() || !right.is_number() && !right.is_string() {
-                return Err(crate::error::LoxError::RuntimeError {
+                return Err(crate::error::RspError::RuntimeError {
                     message: "Operands must be number or string".to_string(),
                 });
             }
@@ -43,7 +43,7 @@ pub fn evaluate_binary(left: &Value, right: &Value, operator: &TokenType) -> Lox
         TokenType::Slash => {
             check_number_operands(left, right)?;
             if right.is_integer() && right.as_integer() == 0 {
-                return Err(crate::error::LoxError::RuntimeError {
+                return Err(crate::error::RspError::RuntimeError {
                     message: "Division by zero".to_string(),
                 });
             }
@@ -83,13 +83,13 @@ pub fn evaluate_binary(left: &Value, right: &Value, operator: &TokenType) -> Lox
         }
         TokenType::BangEqual => Ok(Value::Boolean(!left.equals(right))),
         TokenType::EqualEqual => Ok(Value::Boolean(left.equals(right))),
-        _ => Err(crate::error::LoxError::RuntimeError {
+        _ => Err(crate::error::RspError::RuntimeError {
             message: "Invalid binary operator".to_string(),
         }),
     }
 }
 
-pub fn evaluate_unary(right: &Value, operator: &TokenType) -> LoxResult<Value> {
+pub fn evaluate_unary(right: &Value, operator: &TokenType) -> RspResult<Value> {
     match operator {
         TokenType::Bang => {
             let truthy = right.is_truthy();
@@ -103,27 +103,27 @@ pub fn evaluate_unary(right: &Value, operator: &TokenType) -> LoxResult<Value> {
                 Ok(Value::Double(-right.as_double()))
             }
         }
-        _ => Err(crate::error::LoxError::RuntimeError {
+        _ => Err(crate::error::RspError::RuntimeError {
             message: "Invalid unary operator".to_string(),
         }),
     }
 }
 
-fn check_number_operand(operand: &Value) -> LoxResult<()> {
+fn check_number_operand(operand: &Value) -> RspResult<()> {
     if operand.is_number() {
         Ok(())
     } else {
-        Err(crate::error::LoxError::RuntimeError {
+        Err(crate::error::RspError::RuntimeError {
             message: "Operand must be a number".to_string(),
         })
     }
 }
 
-fn check_number_operands(left: &Value, right: &Value) -> LoxResult<()> {
+fn check_number_operands(left: &Value, right: &Value) -> RspResult<()> {
     if left.is_number() && right.is_number() {
         Ok(())
     } else {
-        Err(crate::error::LoxError::RuntimeError {
+        Err(crate::error::RspError::RuntimeError {
             message: format!("Operands must be numbers. left: {}, right: {}", left, right),
         })
     }

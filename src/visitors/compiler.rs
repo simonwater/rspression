@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    LoxError, LoxResult,
+    RspError, RspResult,
     chunk::{Chunk, ChunkWriter},
     expr::{
         AssignExpr, BinaryExpr, CallExpr, Expr, GetExpr, IdExpr, IfExpr, LiteralExpr, LogicExpr,
@@ -34,7 +34,7 @@ impl OpCodeCompiler {
         self.var_set.clear();
     }
 
-    pub fn compile(&mut self, exprInfo: &ExprInfo) -> LoxResult<()> {
+    pub fn compile(&mut self, exprInfo: &ExprInfo) -> RspResult<()> {
         let expr = exprInfo.get_expr();
         let order = exprInfo.get_index();
         self.compile_expr(expr, order)?;
@@ -43,7 +43,7 @@ impl OpCodeCompiler {
         Ok(())
     }
 
-    pub fn compile_expr(&mut self, expr: &Expr, order: usize) -> LoxResult<()> {
+    pub fn compile_expr(&mut self, expr: &Expr, order: usize) -> RspResult<()> {
         self.emit_op_with_arg(OpCode::Begin, order as i32);
         self.execute(expr)?;
         self.emit_op(OpCode::End);
@@ -57,7 +57,7 @@ impl OpCodeCompiler {
         self.chunk_writer.flush()
     }
 
-    fn execute(&mut self, expr: &Expr) -> LoxResult<()> {
+    fn execute(&mut self, expr: &Expr) -> RspResult<()> {
         expr.accept(self)
     }
 
@@ -91,8 +91,8 @@ impl OpCodeCompiler {
     }
 }
 
-impl Visitor<LoxResult<()>> for OpCodeCompiler {
-    fn visit_binary(&mut self, expr: &BinaryExpr) -> LoxResult<()> {
+impl Visitor<RspResult<()>> for OpCodeCompiler {
+    fn visit_binary(&mut self, expr: &BinaryExpr) -> RspResult<()> {
         self.execute(&expr.left)?;
         self.execute(&expr.right)?;
         let op = match &expr.operator.token_type {
@@ -109,7 +109,7 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
             TokenType::BangEqual => OpCode::BangEqual,
             TokenType::EqualEqual => OpCode::EqualEqual,
             t => {
-                return Err(LoxError::RuntimeError {
+                return Err(RspError::RuntimeError {
                     message: format!("Unknown binary operator: {:?}", t),
                 });
             }
@@ -118,7 +118,7 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
         Ok(())
     }
 
-    fn visit_logic(&mut self, expr: &LogicExpr) -> LoxResult<()> {
+    fn visit_logic(&mut self, expr: &LogicExpr) -> RspResult<()> {
         self.execute(&expr.left)?;
         if expr.operator.token_type == TokenType::And {
             let jumper = self.emit_jump(OpCode::JumpIfFalse);
@@ -136,7 +136,7 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
         Ok(())
     }
 
-    fn visit_literal(&mut self, expr: &LiteralExpr) -> LoxResult<()> {
+    fn visit_literal(&mut self, expr: &LiteralExpr) -> RspResult<()> {
         match expr.value {
             Value::Boolean(v) if v => self.emit_op(OpCode::True),
             Value::Boolean(v) if !v => self.emit_op(OpCode::False),
@@ -146,13 +146,13 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
         Ok(())
     }
 
-    fn visit_unary(&mut self, expr: &UnaryExpr) -> LoxResult<()> {
+    fn visit_unary(&mut self, expr: &UnaryExpr) -> RspResult<()> {
         self.execute(&expr.right)?;
         match &expr.operator.token_type {
             TokenType::Bang => self.emit_op(OpCode::Not),
             TokenType::Minus => self.emit_op(OpCode::Negate),
             t => {
-                return Err(LoxError::CompileError {
+                return Err(RspError::CompileError {
                     message: format!("unsupported unary operator: {:?}", t),
                 });
             }
@@ -160,13 +160,13 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
         Ok(())
     }
 
-    fn visit_id(&mut self, expr: &IdExpr) -> LoxResult<()> {
+    fn visit_id(&mut self, expr: &IdExpr) -> RspResult<()> {
         let constant = self.make_constant(Value::String(expr.name.lexeme.to_string()));
         self.emit_op_with_arg(OpCode::GetGlobal, constant as i32);
         Ok(())
     }
 
-    fn visit_assign(&mut self, expr: &AssignExpr) -> LoxResult<()> {
+    fn visit_assign(&mut self, expr: &AssignExpr) -> RspResult<()> {
         self.execute(&expr.right)?;
         if let Expr::Id(id_expr) = &*expr.left {
             let constant = self.make_constant(Value::String(id_expr.name.lexeme.to_string()));
@@ -175,18 +175,18 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
         Ok(())
     }
 
-    fn visit_call(&mut self, expr: &CallExpr) -> LoxResult<()> {
+    fn visit_call(&mut self, expr: &CallExpr) -> RspResult<()> {
         if let Expr::Id(id_expr) = &*expr.callee {
             let name = &id_expr.name.lexeme;
             let func = self
                 .function_manager
                 .get(name)
-                .ok_or(LoxError::CompileError {
+                .ok_or(RspError::CompileError {
                     message: format!("Undefined function: {}", name),
                 })?;
 
             if func.arity() != expr.arguments.len() {
-                return Err(LoxError::CompileError {
+                return Err(RspError::CompileError {
                     message: format!(
                         "Expected {} arguments but got {} for function {}",
                         func.arity(),
@@ -205,7 +205,7 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
         Ok(())
     }
 
-    fn visit_if(&mut self, expr: &IfExpr) -> LoxResult<()> {
+    fn visit_if(&mut self, expr: &IfExpr) -> RspResult<()> {
         self.execute(&expr.condition)?;
         let else_jumper = self.emit_jump(OpCode::JumpIfFalse);
         self.emit_op(OpCode::Pop);
@@ -222,14 +222,14 @@ impl Visitor<LoxResult<()>> for OpCodeCompiler {
         Ok(())
     }
 
-    fn visit_get(&mut self, expr: &GetExpr) -> LoxResult<()> {
+    fn visit_get(&mut self, expr: &GetExpr) -> RspResult<()> {
         self.execute(&expr.object)?;
         let constant = self.make_constant(Value::String(expr.name.lexeme.to_string()));
         self.emit_op_with_arg(OpCode::GetProperty, constant as i32);
         Ok(())
     }
 
-    fn visit_set(&mut self, expr: &SetExpr) -> LoxResult<()> {
+    fn visit_set(&mut self, expr: &SetExpr) -> RspResult<()> {
         self.execute(&expr.value)?;
         self.execute(&expr.object)?;
         let constant = self.make_constant(Value::String(expr.name.lexeme.to_string()));

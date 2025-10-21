@@ -1,7 +1,7 @@
-use rspression::{DefaultEnvironment, Environment, LoxRunner, Value};
+use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut runner = LoxRunner::new();
+    let mut runner = RspRunner::new();
 
     // Test simple arithmetic
     let result = runner.execute("1 + 2")?;
