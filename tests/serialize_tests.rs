@@ -94,13 +94,16 @@ fn create_formulas() -> Vec<String> {
 }
 
 fn get_environment() -> DefaultEnvironment {
-    let mut env = DefaultEnvironment::new();
-    for i in 0..FORMULA_BATCHES {
-        env.put(format!("E{}", i), 2.into());
-        env.put(format!("F{}", i), 3.into());
-        env.put(format!("M{}", i), 4.into());
-        env.put(format!("N{}", i), 5.into());
-    }
+    let mut env = DefaultEnvironment::with_capacity(FORMULA_BATCHES * 5);
+    env.extend((0..FORMULA_BATCHES).flat_map(|i| {
+        let i_str = i.to_string();
+        [
+            (format!("E{}", i_str), 2.into()),
+            (format!("F{}", i_str), 3.into()),
+            (format!("M{}", i_str), 4.into()),
+            (format!("N{}", i_str), 5.into()),
+        ]
+    }));
     env
 }
 

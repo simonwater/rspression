@@ -10,7 +10,6 @@ debug-assertions = true
 
 [dependencies]
 thiserror = "1.0"
-anyhow = "1.0"
 bitvec = "1"
 
 [dev-dependencies]

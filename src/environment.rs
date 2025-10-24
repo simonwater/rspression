@@ -5,10 +5,9 @@ pub trait Environment {
     fn before_execute(&mut self, _vars: &[String]) -> bool {
         true
     }
-
     fn get(&self, name: &str) -> Option<&Value>;
-    fn get_or_default<'a>(&'a self, name: &str, default: &'a Value) -> Option<&'a Value>;
     fn put(&mut self, name: String, value: Value) -> bool;
+    fn extend<T: IntoIterator<Item = (String, Value)>>(&mut self, iter: T);
     fn size(&self) -> usize;
 }
 
@@ -23,6 +22,12 @@ impl DefaultEnvironment {
             values: HashMap::new(),
         }
     }
+
+    pub fn with_capacity(c: usize) -> Self {
+        Self {
+            values: HashMap::with_capacity(c),
+        }
+    }
 }
 
 impl Environment for DefaultEnvironment {
@@ -30,13 +35,13 @@ impl Environment for DefaultEnvironment {
         self.values.get(name)
     }
 
-    fn get_or_default<'a>(&'a self, name: &str, default: &'a Value) -> Option<&'a Value> {
-        Some(self.values.get(name).unwrap_or(default))
-    }
-
     fn put(&mut self, name: String, value: Value) -> bool {
         self.values.insert(name, value);
         true
+    }
+
+    fn extend<T: IntoIterator<Item = (String, Value)>>(&mut self, iter: T) {
+        self.values.extend(iter);
     }
 
     fn size(&self) -> usize {

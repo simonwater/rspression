@@ -88,8 +88,8 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
         let IdExpr { name } = expr;
         Ok(self
             .environment
-            .get_or_default(&name.lexeme, &Value::Null)
-            .unwrap()
+            .get(&name.lexeme)
+            .unwrap_or(&Value::Null)
             .clone())
     }
 
