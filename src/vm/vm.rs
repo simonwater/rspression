@@ -280,7 +280,7 @@ impl VM {
 
     fn read_code(&mut self, reader: &mut ChunkReader) -> OpCode {
         let code = reader.read_byte();
-        OpCode::try_from(code).unwrap()
+        OpCode::from(code)
     }
 
     fn read_int(&mut self, reader: &mut ChunkReader) -> i32 {

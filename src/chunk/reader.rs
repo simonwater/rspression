@@ -38,7 +38,7 @@ impl<'a> ChunkReader<'a> {
     }
 
     pub fn read_opcode(&mut self) -> OpCode {
-        OpCode::try_from(self.read_byte()).unwrap()
+        OpCode::from(self.read_byte())
     }
 
     pub fn read_const(&self, index: usize) -> &Value {

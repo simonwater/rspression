@@ -140,7 +140,10 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
         let GetExpr { object, name } = expr;
         let object_val = self.evaluate(object)?;
         if let Some(instance) = object_val.as_instance() {
-            Ok(instance.get(&name.lexeme).unwrap().clone())
+            match instance.get(&name.lexeme) {
+                Some(val) => Ok(val.clone()),
+                None => Ok(Value::Null),
+            }
         } else {
             Err(crate::error::RspError::RuntimeError {
                 message: "Only instances have properties".to_string(),

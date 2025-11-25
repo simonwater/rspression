@@ -147,7 +147,7 @@ impl<'a> Parser<'a> {
                 }
                 arguments.push(self.expression_prec(Precedence::PREC_NONE)?);
 
-                if !self.match_token(&[crate::TokenType::Comma]) {
+                if !self.match_token(&[crate::TokenType::Comma])? {
                     break;
                 }
             }
@@ -221,14 +221,14 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn match_token(&mut self, types: &[TokenType]) -> bool {
+    pub fn match_token(&mut self, types: &[TokenType]) -> RspResult<bool> {
         for token_type in types {
             if self.check(token_type) {
-                self.advance().unwrap();
-                return true;
+                self.advance()?;
+                return Ok(true);
             }
         }
-        false
+        Ok(false)
     }
 
     pub fn consume(&mut self, token_type: TokenType, message: &str) -> RspResult<Rc<Token<'a>>> {

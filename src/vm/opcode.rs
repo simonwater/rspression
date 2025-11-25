@@ -34,13 +34,13 @@ pub enum OpCode {
     End = 30,
     Return = 31,
     Exit = 32,
+    Unknown = 255,
 }
 
-impl TryFrom<u8> for OpCode {
-    type Error = ();
-    fn try_from(v: u8) -> Result<Self, Self::Error> {
+impl From<u8> for OpCode {
+    fn from(v: u8) -> Self {
         use OpCode::*;
-        Ok(match v {
+        match v {
             0 => Constant,
             1 => Null,
             2 => True,
@@ -74,9 +74,7 @@ impl TryFrom<u8> for OpCode {
             30 => End,
             31 => Return,
             32 => Exit,
-            _ => return Err(()),
-        })
+            _ => Unknown,
+        }
     }
 }
-
-

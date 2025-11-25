@@ -148,7 +148,7 @@ impl RspRunner {
         let mut compiler = OpCodeCompiler::new();
         compiler.begin_compile();
         for expr_info in expr_infos {
-            compiler.compile(expr_info).unwrap();
+            compiler.compile(expr_info)?;
         }
         let result = compiler.end_compile();
         Ok(result)
