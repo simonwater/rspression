@@ -1,9 +1,13 @@
 [package]
 name = "rspression"
 version = "0.1.0"
+authors = ["wangyinhe <wyinhe@gmail.com>"]
 edition = "2024"
-description = "A high-performance, lightweight expression calculation engine"
+
 license = "MIT"
+repository = "https://github.com/simonwater/rspression"
+description = "A high-performance, lightweight expression calculation engine"
+keywords = ["expression", "formula", "compiler", "virtual machine", "bytecode"]
 
 [profile.dev]
 opt-level = 0
