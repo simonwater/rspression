@@ -2,6 +2,8 @@
 name = "rspression"
 version = "0.1.0"
 edition = "2024"
+description = "A high-performance, lightweight expression calculation engine"
+license = "MIT"
 
 [profile.dev]
 opt-level = 0
