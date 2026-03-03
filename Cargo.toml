@@ -7,7 +7,7 @@ edition = "2024"
 license = "MIT"
 repository = "https://github.com/simonwater/rspression"
 description = "A high-performance, lightweight expression calculation engine"
-keywords = ["expression", "formula", "compiler", "virtual machine", "bytecode"]
+keywords = ["expression", "formula", "compiler", "virtual-machine", "bytecode"]
 
 [profile.dev]
 opt-level = 0
