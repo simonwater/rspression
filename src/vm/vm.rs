@@ -15,44 +15,60 @@ pub struct ExResult {
 }
 
 pub struct VM {
-    stack: Vec<Value>,
+    top: usize,
+    stack: [Value; STACK_MAX],
     function_manager: FunctionManager,
 }
 
+const STACK_MAX: usize = 256;
+const INIT: Value = Value::Null;
 impl VM {
-    const STACK_MAX: usize = 256;
-
     pub fn new() -> Self {
         Self {
-            stack: Vec::with_capacity(Self::STACK_MAX),
+            top: 0,
+            stack: [INIT; STACK_MAX],
             function_manager: FunctionManager::new(),
         }
     }
 
     fn reset(&mut self) {
-        self.stack.clear();
+        self.top = 0;
+    }
+
+    fn stack_is_empty(&self) -> bool {
+        self.top == 0
     }
 
     fn push(&mut self, value: Value) {
-        if self.stack.len() >= Self::STACK_MAX {
+        if self.top >= STACK_MAX {
             panic!("Stack overflow");
         }
-        self.stack.push(value);
+        self.stack[self.top] = value;
+        self.top += 1;
     }
 
     fn pop(&mut self) -> Value {
-        self.stack.pop().unwrap_or(Value::Null)
+        if self.top == 0 {
+            Value::Null
+        } else {
+            self.top -= 1;
+            std::mem::take(&mut self.stack[self.top])
+        }
     }
 
     fn peek(&self) -> &Value {
-        self.stack.last().unwrap_or(&Value::Null)
+        if self.top == 0 {
+            &Value::Null
+        } else {
+            &self.stack[self.top - 1]
+        }
     }
 
     fn _peek_distance(&self, distance: usize) -> &Value {
-        if distance >= self.stack.len() {
+        if distance >= self.top {
             &Value::Null
         } else {
-            &self.stack[self.stack.len() - 1 - distance]
+            &self.stack[self.top - 1 - distance]
         }
     }
 
@@ -212,7 +228,7 @@ impl VM {
                     // Return from function
                 }
                 OpCode::Exit => {
-                    if !self.stack.is_empty() {
+                    if !self.stack_is_empty() {
                         return Err(RspError::RuntimeError {
                             message: format!(
                                 "VM state error, stack not empty: {}",
