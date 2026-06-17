@@ -1,5 +1,5 @@
 # rspression
-# I. Background Introduction
+# 1. Background Introduction
 rspression is a high-performance, lightweight expression calculation engine written in Rust, designed to enhance the extensibility of user systems in different business scenarios.
 
 Traditional expression engines typically execute expressions by parsing them into an Abstract Syntax Tree (AST) and then directly interpreting and executing the tree. This approach is suitable for scenarios with a relatively small number of formulas and expressions; since they are parsed, analyzed, and executed from scratch each time, it does not pose significant performance issues. However, if there are thousands of expressions to be executed each time, starting the parsing process from scratch for every single execution would result in a massive waste of resources. If the system is in a single-machine environment, the intermediate representation (IR) structure can simply be cached in memory. But if the system is deployed in a cluster where the cache resides in an independent service like Redis, the footprint of the intermediate structure becomes too large, and the serialization, deserialization, and network transmission during cache reads and writes will consume a considerable amount of time.
@@ -10,7 +10,7 @@ The bytecode execution mode is inherently different from the process of serializ
 
 While compiling expressions into bytecode introduces a slight initial compilation overhead, it perfectly fits the 'write-once, execute-frequently' business pattern. For high-concurrency workloads with large volumes of expressions, compiling once upon creation or modification enables future executions to run entirely on bytecode, completely decoupled from the source structure. This delivers a massive performance boost for data caching, network transmission, and compute node execution alike.
 
-# II. Usage Guide
+# 2. Usage Guide
 ## Evaluation Mode
 Supports operators such as +, -, *, /, ** (exponentiation), <, >, <=, >=, ==, !=, %, &&, ||, !, etc. Supports Excel-style if(cond, thenBranch, elseBranch) conditional functions.
 ```rust
