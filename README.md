@@ -2,6 +2,14 @@
 # I. Background Introduction
 rspression is a high-performance, lightweight expression calculation engine written in Rust, designed to enhance the extensibility of user systems in different business scenarios.
 
+Traditional expression engines typically execute expressions by parsing them into an Abstract Syntax Tree (AST) and then directly interpreting and executing the tree. This approach is suitable for scenarios with a relatively small number of formulas and expressions; since they are parsed, analyzed, and executed from scratch each time, it does not pose significant performance issues. However, if there are thousands of expressions to be executed each time, starting the parsing process from scratch for every single execution would result in a massive waste of resources. If the system is in a single-machine environment, the intermediate representation (IR) structure can simply be cached in memory. But if the system is deployed in a cluster where the cache resides in an independent service like Redis, the footprint of the intermediate structure becomes too large, and the serialization, deserialization, and network transmission during cache reads and writes will consume a considerable amount of time.
+
+To address this background, rspression provides two execution modes. The first is the traditional approach of directly executing expression strings, which is ideal for scenarios with a limited number of expressions. The second is the bytecode execution mode: once the expressions are configured, the business system can compile them into bytecode (Chunk) and persist them into storage services such as caches, databases, or files. When execution is subsequently required, the bytecode is retrieved from the storage or cache service and run directly by the virtual machine.
+
+The bytecode execution mode is inherently different from the process of serializing, deserializing, and then executing an Intermediate Representation (IR) object. Typically, before an IR object can be stored or transmitted over a network, it must first undergo serialization. Then, after being transmitted or retrieved from storage, it must be deserialized back into an object before it can be executed. Bytecode, by contrast, is natively a byte array. Once a string-formatted expression is compiled into bytecode, it can be directly transmitted over the network or written into a storage service without any serialization. Furthermore, when the bytecode is retrieved from the network or a storage service, its in-memory form remains a byte array, which can be directly recognized and executed by the virtual machine without the need for deserialization
+
+While compiling expressions into bytecode introduces a slight initial compilation overhead, it perfectly fits the 'write-once, execute-frequently' business pattern. For high-concurrency workloads with large volumes of expressions, compiling once upon creation or modification enables future executions to run entirely on bytecode, completely decoupled from the source structure. This delivers a massive performance boost for data caching, network transmission, and compute node execution alike.
+
 # II. Usage Guide
 ## Evaluation Mode
 Supports operators such as +, -, *, /, ** (exponentiation), <, >, <=, >=, ==, !=, %, &&, ||, !, etc. Supports Excel-style if(cond, thenBranch, elseBranch) conditional functions.
@@ -62,9 +70,8 @@ println!({}, r) // 7
 
 The default environment object provided by the system is DefaultEnvironment. Before executing expressions, all variables that need to read values must have corresponding values in the DefaultEnvironment object. Sometimes there are many expressions to execute, and the business layer cannot efficiently prepare all variable values in advance before parsing expressions. Or the variables in the expressions are indirectly related to the actual data. In such cases, you can define a custom environment object by simply inheriting the Environment abstract class.
 
-## Compilation and Execution
-rspression provides two ways to execute expressions. The first is to execute expression strings directly, as shown in the examples above, which is suitable for cases with fewer expressions. The second is to first compile the expression into bytecode (Chunk), where the business system caches or stores the bytecode object, and later when execution is needed, the bytecode is run directly.
-
+## Bytecode Execution
+The expressions are first compiled into bytecode (Chunk) and then cached or stored by the business system. When subsequent execution is required, the bytecode is run directly.
 - Compile expressions:
 ```rust
 use rspression::{Chunk, RspRunner};
@@ -89,48 +96,3 @@ runner.run_chunk(&chunk, &mut env).unwrap();
 ```
 
 The Chunk object consists only of byte arrays with extremely high serialization and deserialization performance, making it suitable for cluster environments using caching services like Redis.
-
-# III. Implementation Approach
-![Overall Process](docs/images/all-steps.png)
-
-String-format expressions are processed in the parser through lexical analysis and syntax analysis to obtain a syntax tree. During the analysis phase, rspression extracts variable information from all expressions and sorts all formulas according to the dependency relationships between variables to obtain an intermediate representation structure (ExprInfo) that can be executed sequentially.
-
-For the subsequent execution of expressions, the simplest approach is to directly interpret and execute the expression syntax tree, which is suitable for cases with fewer formula expressions. Each execution starts from scratch with parsing, analysis, and execution, and performance generally does not present significant issues. However, if thousands or even tens of thousands of expressions need to be executed each time, parsing from zero for each execution would waste resources. If the system is a single-machine environment, the intermediate representation structure can be cached in memory. However, if the system is deployed in a cluster with caching services like Redis, the intermediate structure would occupy too much space, and serialization, deserialization, and network transmission during cache read/write operations would consume a lot of time.
-
-To address this situation, rspression provides a bytecode execution format. After the business system configures expressions, it can first compile them into bytecode (Chunk), then place the bytecode in a cache or storage service such as a database or file system. When execution is needed later, the bytecode is read from the storage/cache service and executed.
-
-## 3.1 Parsing
-### Lexical Analysis
-Lexical analysis is the first step in rspression's processing of expressions, with the goal of splitting string-format expressions into a list of words (tokens). We know that characters are the basic units composing strings, but for expression execution, arbitrarily extracting a fragment or substring of an expression for analysis is meaningless. For example:
-```rust
-age = currentDate - birthday
-```
-If we focus on "currentDate", we can determine this is a variable. If we focus on "=" or "-", we know these are operators, one for assignment and one for subtraction. However, if we focus on substrings like "rrentDa" or "ge = curr", these are meaningless for expression analysis. The purpose of lexical analysis is to process string-format expressions into a series of meaningful words, allowing subsequent processing stages of the compiler to focus only on the meaningful token list without needing to analyze the relationships between characters within the string. For example, the final meaningful processing result is:
-![Lexical Analysis Result](docs/images/tokens.png)
-
-Subsequent processing stages use only these five tokens as the basic processing unit.
-
-The combinations of different characters that can form strings are infinite. However, as the basic units of expressions, token categories are fixed. All token categories are defined in the [token::TokenType](src/parser/token.rs) enumeration. The lexical analyzer scans the string from left to right and categorizes words into corresponding categories while creating tokens. At the code level, only the following cases need to be classified and handled:
-
-- Single-character symbols: When a scanned character can only be a single-character symbol, such as ()[]{},.;-+/%etc., directly construct a token object
-- Double-character symbols: When a scanned character could be either a single character or the start of a double-character symbol, look ahead one character to determine if it forms a corresponding double-character token, such as !=, ==, >=, <=, //, ** etc.
-- Whitespace: Skip directly, including spaces, carriage returns, newlines, tabs, etc. Comments are also skipped directly.
-- String literals: When a double quote is scanned, continue scanning until another double quote appears. The content between them constitutes a string literal.
-- Numeric literals: When a digit is scanned, continue scanning until a non-digit character is encountered or the end is reached. The content in between constitutes a numeric literal.
-- Identifiers: When a letter or underscore is encountered at the start, continue scanning. Subsequent characters that are letters, digits, or underscores continue to be scanned until a character that doesn't satisfy this or the end is reached. The collected content forms an identifier.
-- Keywords: Keyword matching is handled as part of identifier matching. According to the keyword priority principle, whenever a completed identifier matches a keyword, a keyword token is formed.
-
-For the complete implementation code, refer to [Scanner::Scanner](src/parser/scanner.rs)
-
-### Syntax Analysis
-To obtain the syntax tree, the expression engine uses the Pratt parser algorithm during the syntax analysis phase.
-
-Traditional recursive descent parsers require writing separate parsing functions for each priority level when parsing expressions. They then call parsing functions layer by layer from low to high priority. For example, assign() parses assignments, term() parses addition and subtraction, factor() parses multiplication and division. Then assign() would call term(), and term() would call factor(). This easily leads to bloated code, and adding new syntax requires restructuring existing logic, increasing program maintenance difficulty.
-
-## 3.2 Analysis
-
-## 3.3 Interpretation Execution
-
-## 3.4 Compilation
-
-## 3.5 Virtual Machine Execution
