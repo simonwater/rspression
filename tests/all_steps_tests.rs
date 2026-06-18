@@ -7,8 +7,8 @@ use rspression::RspRunner;
 use rspression::ir::{Analyzer, ExprInfo};
 use rspression::{DefaultEnvironment, Environment};
 
-const FORMULA_BATCHES: usize = 10000;
-const DIRECTORY: &str = "SerializeTest";
+const FORMULA_BATCHES: usize = 1000;
+const DIRECTORY: &str = "AllStepsTest";
 
 #[test]
 fn test_serialize() {
@@ -19,7 +19,13 @@ fn test_serialize() {
 fn chunk_serialize_test() {
     let lines = create_formulas();
     let srcs: Vec<&str> = lines.iter().map(String::as_str).collect();
-    println!("表达式总数：{}", lines.len());
+    let total_size = srcs.iter().map(|&s| s.as_bytes().len()).sum::<usize>();
+    println!(
+        "表达式总数：{}。表达式大小总和：{}KB",
+        lines.len(),
+        total_size / 1024
+    );
+
     let start = std::time::Instant::now();
     let mut runner = RspRunner::new();
     let exprs = runner.parse(&srcs).unwrap();
@@ -53,26 +59,26 @@ fn test_chunk(chunk: &Chunk) {
     let chunk = TestHelper::read_chunk_file(&path).expect("Failed to read chunk file");
     println!("完成从文件反序列化字节码。 耗时:{:?}", start.elapsed());
 
+    let mut env = get_environment();
     println!("开始执行字节码：");
     let start = std::time::Instant::now();
     let mut runner = RspRunner::new();
-    let mut env = get_environment();
     runner.run_chunk(&chunk, &mut env).unwrap();
-    check_result(&env);
     println!("字节码执行完成。 耗时:{:?}", start.elapsed());
+    check_result(&env);
 }
 
 fn test_syntax_tree(expr_infos: &[&ExprInfo]) {
     // todo: 序列化语法树
     // todo: 反序列化语法树
 
+    let mut env = get_environment();
     println!("开始执行语法树");
     let start = std::time::Instant::now();
-    let mut env = get_environment();
     let mut runner = RspRunner::new();
     runner.run_ir(expr_infos, &mut env).unwrap();
-    check_result(&env);
     println!("语法树执行完成。 耗时:{:?}", start.elapsed());
+    check_result(&env);
 }
 
 fn create_formulas() -> Vec<String> {

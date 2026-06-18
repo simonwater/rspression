@@ -3,8 +3,8 @@ use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut srcs = Vec::new();
     srcs.push("x = a + b * c");
-    srcs.push("a = m + n");
     srcs.push("b = a * 2");
+    srcs.push("a = m + n");
     srcs.push("c = n + w + b");
 
     let mut runner = RspRunner::new();

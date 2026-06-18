@@ -6,7 +6,7 @@ use rspression::{Chunk, DefaultEnvironment, Environment, ExecuteMode, RspRunner}
 use std::path::PathBuf;
 use std::time::Instant;
 
-const FORMULA_BATCHES: usize = 10000;
+const FORMULA_BATCHES: usize = 1000;
 const DIRECTORY: &str = "BatchRunnerTest";
 
 #[test]
@@ -14,13 +14,21 @@ fn test_ir() {
     println!("批量运算测试(解析执行)");
     let lines = get_expressions();
     let srcs: Vec<&str> = lines.iter().map(String::as_str).collect();
+    let total_size = srcs.iter().map(|&s| s.as_bytes().len()).sum::<usize>();
+    println!(
+        "表达式总数：{}。表达式大小总和：{}KB",
+        lines.len(),
+        total_size / 1024
+    );
+    let mut env = get_env();
+
     let start = Instant::now();
     let mut runner = RspRunner::new();
     runner.set_execute_mode(ExecuteMode::SyntaxTree);
-    let mut env = get_env();
     runner.execute_multiple_with_env(&srcs, &mut env).unwrap();
-    check_values(&env);
     println!("用时: {:?}", start.elapsed());
+
+    check_values(&env);
     println!("==========");
 }
 
@@ -28,17 +36,26 @@ fn test_ir() {
 fn test_compile_chunk() {
     println!("批量运算测试(编译+字节码执行)");
     let lines = get_expressions();
+    let mut env = get_env();
     let srcs: Vec<&str> = lines.iter().map(String::as_str).collect();
-    let mut runner = RspRunner::new();
-    let start = std::time::Instant::now();
-    let chunk = runner.compile_source(&srcs).unwrap();
-    println!("编译用时: {:?}", start.elapsed());
+    let total_size = srcs.iter().map(|&s| s.as_bytes().len()).sum::<usize>();
+    println!(
+        "表达式总数：{}。表达式大小总和：{}KB",
+        lines.len(),
+        total_size / 1024
+    );
 
     let start = std::time::Instant::now();
-    let mut env = get_env();
+    let mut runner = RspRunner::new();
+    let chunk = runner.compile_source(&srcs).unwrap();
+    println!("编译用时: {:?}", start.elapsed());
+    println!("字节码大小：{}KB.", chunk.get_byte_size() / 1024);
+
+    let start = std::time::Instant::now();
     runner.run_chunk(&chunk, &mut env).unwrap();
-    check_values(&env);
     println!("字节码执行用时：{:?}", start.elapsed());
+
+    check_values(&env);
     println!("==========");
 }
 

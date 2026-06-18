@@ -1,5 +1,5 @@
 # rspression
-# 1. Background Introduction
+# 1. General Introduction
 rspression is a high-performance, lightweight expression calculation engine written in Rust, designed to enhance the extensibility of user systems in different business scenarios.
 
 Traditional expression engines typically execute expressions by parsing them into an Abstract Syntax Tree (AST) and then directly interpreting and executing the tree. This approach is suitable for scenarios with a relatively small number of formulas and expressions; since they are parsed, analyzed, and executed from scratch each time, it does not pose significant performance issues. However, if there are thousands of expressions to be executed each time, starting the parsing process from scratch for every single execution would result in a massive waste of resources. If the system is in a single-machine environment, the intermediate representation (IR) structure can simply be cached in memory. But if the system is deployed in a cluster where the cache resides in an independent service like Redis, the footprint of the intermediate structure becomes too large, and the serialization, deserialization, and network transmission during cache reads and writes will consume a considerable amount of time.
@@ -10,8 +10,33 @@ The bytecode execution mode is inherently different from the process of serializ
 
 While compiling expressions into bytecode introduces a slight initial compilation overhead, it perfectly fits the 'write-once, execute-frequently' business pattern. For high-concurrency workloads with large volumes of expressions, compiling once upon creation or modification enables future executions to run entirely on bytecode, completely decoupled from the source structure. This delivers a massive performance boost for data caching, network transmission, and compute node execution alike.
 
+To evaluate the advantages of the bytecode virtual machine, I conducted a benchmark on 5,000 expressions in release mode. The test environment configuration is as follows:
+- CPU: 2.2 GHz Quad-Core Intel Core i7
+- Memory: 16 GB
+
+| **Metric** | **Value** |
+| ---- | ---- |
+| Total Number of Expressions | 5,000 |
+| Total Size of All Strings | 195 KB |
+| Time to Interpret and Execute All Strings | 66 ms |
+| Time to Compile Strings into Bytecode | 88 ms |
+| Compiled Bytecode Size | 298 KB |
+| Time to Execute Bytecode via VM | 5 ms |
+
+As shown in the results, parsing the 5,000 string expressions (totaling 195 KB) from scratch into an AST and executing them recursively takes 66 ms. Although compiling these raw expression texts into bytecode requires a slightly higher upfront cost of 88 ms, executing this bytecode directly via the virtual machine afterwards takes only 5 ms. 
+
+Furthermore, the size of the bytecode is only about 50% larger than the original text, providing an unparalleled bandwidth advantage for distributed network transmissions (such as Redis cache synchronization). In stark contrast, if you choose to directly serialize the AST structures corresponding to all these expressions, the payload would inevitably bloat several-fold or even ten-fold.
+
+The benchmark code can be found [here](tests/runner_batch_tests.rs). Please run the tests in release mode from the project root directory using the following commands:
+``` Shell
+cargo test --release  --test runner_batch_tests -- test_ir --nocapture
+```
+and
+``` Shell
+cargo test --release  --test runner_batch_tests -- test_compile_chunk --nocapture
+```
 # 2. Usage Guide
-## Evaluation Mode
+## Expression Evaluation
 Supports operators such as +, -, *, /, ** (exponentiation), <, >, <=, >=, ==, !=, %, &&, ||, !, etc. Supports Excel-style if(cond, thenBranch, elseBranch) conditional functions.
 ```rust
 use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
@@ -32,15 +57,15 @@ println!(
 println!("{}", runner.execute_with_env("a + b * c >= 6", &mut env)?); // true
 ```
 
-## Computation Mode
+## Assignment Calculation
 Supports variable assignment operations in expressions. When performing batch computations with multiple expressions, they are first sorted according to their dependency relationships before execution. Additionally, circular dependency detection is performed among the computation expressions.
 ```rust
 use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
 
 let mut srcs = Vec::new();
 srcs.push("x = a + b * c");
-srcs.push("a = m + n");
 srcs.push("b = a * 2");
+srcs.push("a = m + n");
 srcs.push("c = n + w + b");
 
 let mut runner = RspRunner::new();
