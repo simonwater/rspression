@@ -6,6 +6,8 @@ Traditional expression engines typically execute expressions by parsing them int
 
 To address this background, rspression provides two execution modes. The first is the traditional approach of directly executing expression strings, which is ideal for scenarios with a limited number of expressions. The second is the bytecode execution mode: once the expressions are configured, the business system can compile them into bytecode (Chunk) and persist them into storage services such as caches, databases, or files. When execution is subsequently required, the bytecode is retrieved from the storage or cache service and run directly by the virtual machine.
 
+![Overall Process](docs/images/all-steps.png)
+
 The bytecode execution mode is inherently different from the process of serializing, deserializing, and then executing an Intermediate Representation (IR) object. Typically, before an IR object can be stored or transmitted over a network, it must first undergo serialization. Then, after being transmitted or retrieved from storage, it must be deserialized back into an object before it can be executed. Bytecode, by contrast, is natively a byte array. Once a string-formatted expression is compiled into bytecode, it can be directly transmitted over the network or written into a storage service without any serialization. Furthermore, when the bytecode is retrieved from the network or a storage service, its in-memory form remains a byte array, which can be directly recognized and executed by the virtual machine without the need for deserialization
 
 While compiling expressions into bytecode introduces a slight initial compilation overhead, it perfectly fits the 'write-once, execute-frequently' business pattern. For high-concurrency workloads with large volumes of expressions, compiling once upon creation or modification enables future executions to run entirely on bytecode, completely decoupled from the source structure. This delivers a massive performance boost for data caching, network transmission, and compute node execution alike.
@@ -29,11 +31,11 @@ Furthermore, the size of the bytecode is only about 50% larger than the original
 
 The benchmark code can be found [here](tests/runner_batch_tests.rs). Please run the tests in release mode from the project root directory using the following commands:
 ``` Shell
-cargo test --release  --test runner_batch_tests -- test_ir --nocapture
-```
-and
-``` Shell
-cargo test --release  --test runner_batch_tests -- test_compile_chunk --nocapture
+# Testing traditional direct execution / syntax tree evaluation
+cargo test --release --test runner_batch_tests -- test_ir --nocapture 
+
+# Testing bytecode compilation and virtual machine execution
+cargo test --release --test runner_batch_tests -- test_compile_chunk --nocapture
 ```
 # 2. Usage Guide
 ## Expression Evaluation
@@ -93,7 +95,7 @@ let r = runner.execute_with_env("a + b * c", &mut env)?;
 println!({}, r) // 7
 ```
 
-The default environment object provided by the system is DefaultEnvironment. Before executing expressions, all variables that need to read values must have corresponding values in the DefaultEnvironment object. Sometimes there are many expressions to execute, and the business layer cannot efficiently prepare all variable values in advance before parsing expressions. Or the variables in the expressions are indirectly related to the actual data. In such cases, you can define a custom environment object by simply inheriting the Environment abstract class.
+The default environment object provided by the system is DefaultEnvironment. Before executing expressions, all variables that need to read values must have corresponding values in the DefaultEnvironment object. Sometimes there are many expressions to execute, and the business layer cannot efficiently prepare all variable values in advance before parsing expressions. Or the variables in the expressions are indirectly related to the actual data. In such cases, you can define a custom environment object by simply implement the Environment trait.
 
 ## Bytecode Execution
 The expressions are first compiled into bytecode (Chunk) and then cached or stored by the business system. When subsequent execution is required, the bytecode is run directly.
