@@ -1,7 +1,8 @@
 # rspression
-# 1. General Introduction
-rspression is a high-performance, lightweight expression calculation engine written in Rust, designed to enhance the extensibility of user systems in different business scenarios.
+## General Introduction
+rspression is a high-performance, lightweight expression calculation engine written in Rust, aimed at enhancing the extensibility of user systems in different business scenarios.
 
+### Design Background
 Traditional expression engines typically execute expressions by parsing them into an Abstract Syntax Tree (AST) and then directly interpreting and executing the tree. This approach is suitable for scenarios with a relatively small number of formulas and expressions; since they are parsed, analyzed, and executed from scratch each time, it does not pose significant performance issues. However, if there are thousands of expressions to be executed each time, starting the parsing process from scratch for every single execution would result in a massive waste of resources. If the system is in a single-machine environment, the intermediate representation (IR) structure can simply be cached in memory. But if the system is deployed in a cluster where the cache resides in an independent service like Redis, the footprint of the intermediate structure becomes too large, and the serialization, deserialization, and network transmission during cache reads and writes will consume a considerable amount of time.
 
 To address this background, rspression provides two execution modes. The first is the traditional approach of directly executing expression strings, which is ideal for scenarios with a limited number of expressions. The second is the bytecode execution mode: once the expressions are configured, the business system can compile them into bytecode (Chunk) and persist them into storage services such as caches, databases, or files. When execution is subsequently required, the bytecode is retrieved from the storage or cache service and run directly by the virtual machine.
@@ -12,6 +13,7 @@ The bytecode execution mode is inherently different from the process of serializ
 
 While compiling expressions into bytecode introduces a slight initial compilation overhead, it perfectly fits the 'write-once, execute-frequently' business pattern. For high-concurrency workloads with large volumes of expressions, compiling once upon creation or modification enables future executions to run entirely on bytecode, completely decoupled from the source structure. This delivers a massive performance boost for data caching, network transmission, and compute node execution alike.
 
+### Performance Benchmark
 To evaluate the advantages of the bytecode virtual machine, I conducted a benchmark on 5,000 expressions in release mode. The test environment configuration is as follows:
 - CPU: 2.2 GHz Quad-Core Intel Core i7
 - Memory: 16 GB
@@ -37,8 +39,9 @@ cargo test --release --test runner_batch_tests -- test_ir --nocapture
 # Testing bytecode compilation and virtual machine execution
 cargo test --release --test runner_batch_tests -- test_compile_chunk --nocapture
 ```
-# 2. Usage Guide
-## Expression Evaluation
+
+## Usage Guide
+### Expression Evaluation
 Supports operators such as +, -, *, /, ** (exponentiation), <, >, <=, >=, ==, !=, %, &&, ||, !, etc. Supports Excel-style if(cond, thenBranch, elseBranch) conditional functions.
 ```rust
 use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
@@ -59,7 +62,7 @@ println!(
 println!("{}", runner.execute_with_env("a + b * c >= 6", &mut env)?); // true
 ```
 
-## Assignment Calculation
+### Assignment Calculation
 Supports variable assignment operations in expressions. When performing batch computations with multiple expressions, they are first sorted according to their dependency relationships before execution. Additionally, circular dependency detection is performed among the computation expressions.
 ```rust
 use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
@@ -83,7 +86,7 @@ println!("b = {}", env.get("b").unwrap().as_integer()); // b = 12
 println!("c = {}", env.get("c").unwrap().as_integer()); // c = 22
 ```
 
-## Defining Environment
+### Defining Environment
 When evaluating expressions, the evaluator retrieves values from the Environment object for variables encountered. Assignment expressions write the evaluation results back to the Environment. Therefore, for variables used in expressions, their specific meanings need to be defined in the Environment:
 ```rust
 let mut env = DefaultEnvironment::new();
@@ -92,12 +95,12 @@ env.put("b".to_string(), Value::Integer(2));
 env.put("c".to_string(), Value::Integer(3));
 let mut runner = RspRunner::new();
 let r = runner.execute_with_env("a + b * c", &mut env)?;
-println!({}, r) // 7
+println!("{}", r) // 7
 ```
 
 The default environment object provided by the system is DefaultEnvironment. Before executing expressions, all variables that need to read values must have corresponding values in the DefaultEnvironment object. Sometimes there are many expressions to execute, and the business layer cannot efficiently prepare all variable values in advance before parsing expressions. Or the variables in the expressions are indirectly related to the actual data. In such cases, you can define a custom environment object by simply implement the Environment trait.
 
-## Bytecode Execution
+### Bytecode Execution
 The expressions are first compiled into bytecode (Chunk) and then cached or stored by the business system. When subsequent execution is required, the bytecode is run directly.
 - Compile expressions:
 ```rust
@@ -123,3 +126,7 @@ runner.run_chunk(&chunk, &mut env).unwrap();
 ```
 
 The Chunk object consists only of byte arrays with extremely high serialization and deserialization performance, making it suitable for cluster environments using caching services like Redis.
+
+## License
+
+MIT
