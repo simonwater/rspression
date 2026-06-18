@@ -46,20 +46,26 @@ Supports operators such as +, -, *, /, ** (exponentiation), <, >, <=, >=, ==, !=
 ```rust
 use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
 
-let mut runner = RspRunner::new();
-// Simple expression
-println!("1 + 2 * 3 = {}", runner.execute("1 + 2 * 3")?); // 1 + 2 * 3 = 7
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Basic arithmetic
+    let mut runner = RspRunner::new();
 
-// With variables
-let mut env = DefaultEnvironment::new();
-env.put("a".to_string(), Value::Integer(1));
-env.put("b".to_string(), Value::Integer(2));
-env.put("c".to_string(), Value::Integer(3));
-println!(
-    "a + b * c = {}",
-    runner.execute_with_env("a + b * c", &mut env)?
-); // a + b * c = 7
-println!("{}", runner.execute_with_env("a + b * c >= 6", &mut env)?); // true
+    // Simple expression
+    println!("1 + 2 * 3 = {}", runner.execute("1 + 2 * 3")?); // 1 + 2 * 3 = 7
+
+    // With variables
+    let mut env = DefaultEnvironment::new();
+    env.put("a".to_string(), Value::Integer(1));
+    env.put("b".to_string(), Value::Integer(2));
+    env.put("c".to_string(), Value::Integer(3));
+    println!(
+        "a + b * c = {}",
+        runner.execute_with_env("a + b * c", &mut env)?
+    ); // a + b * c = 7
+    println!("{}", runner.execute_with_env("a + b * c >= 6", &mut env)?); // true
+
+    Ok(())
+}
 ```
 
 ### Assignment Calculation
@@ -67,35 +73,45 @@ Supports variable assignment operations in expressions. When performing batch co
 ```rust
 use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
 
-let mut srcs = Vec::new();
-srcs.push("x = a + b * c");
-srcs.push("b = a * 2");
-srcs.push("a = m + n");
-srcs.push("c = n + w + b");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut srcs = Vec::new();
+    srcs.push("x = a + b * c");
+    srcs.push("b = a * 2");
+    srcs.push("a = m + n");
+    srcs.push("c = n + w + b");
 
-let mut runner = RspRunner::new();
-let mut env = DefaultEnvironment::new();
-env.put("m".to_string(), Value::Integer(2));
-env.put("n".to_string(), Value::Integer(4));
-env.put("w".to_string(), Value::Integer(6));
+    let mut runner = RspRunner::new();
+    let mut env = DefaultEnvironment::new();
+    env.put("m".to_string(), Value::Integer(2));
+    env.put("n".to_string(), Value::Integer(4));
+    env.put("w".to_string(), Value::Integer(6));
 
-runner.execute_multiple_with_env(&srcs, &mut env).unwrap();
-println!("x = {}", env.get("x").unwrap().as_integer()); // x = 270
-println!("a = {}", env.get("a").unwrap().as_integer()); // a = 6
-println!("b = {}", env.get("b").unwrap().as_integer()); // b = 12
-println!("c = {}", env.get("c").unwrap().as_integer()); // c = 22
+    runner.execute_multiple_with_env(&srcs, &mut env)?;
+    println!("x = {}", env.get("x").unwrap()); // x = 270
+    println!("a = {}", env.get("a").unwrap()); // a = 6
+    println!("b = {}", env.get("b").unwrap()); // b = 12
+    println!("c = {}", env.get("c").unwrap()); // c = 22
+
+    Ok(())
+}
 ```
 
 ### Defining Environment
 When evaluating expressions, the evaluator retrieves values from the Environment object for variables encountered. Assignment expressions write the evaluation results back to the Environment. Therefore, for variables used in expressions, their specific meanings need to be defined in the Environment:
 ```rust
-let mut env = DefaultEnvironment::new();
-env.put("a".to_string(), Value::Integer(1));
-env.put("b".to_string(), Value::Integer(2));
-env.put("c".to_string(), Value::Integer(3));
-let mut runner = RspRunner::new();
-let r = runner.execute_with_env("a + b * c", &mut env)?;
-println!("{}", r) // 7
+use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut env = DefaultEnvironment::new();
+    env.put("a".to_string(), Value::Integer(1));
+    env.put("b".to_string(), Value::Integer(2));
+    env.put("c".to_string(), Value::Integer(3));
+    let mut runner = RspRunner::new();
+    let r = runner.execute_with_env("a + b * c", &mut env)?;
+    println!("{}", r); // 7
+
+    Ok(())
+}
 ```
 
 The default environment object provided by the system is DefaultEnvironment. Before executing expressions, all variables that need to read values must have corresponding values in the DefaultEnvironment object. Sometimes there are many expressions to execute, and the business layer cannot efficiently prepare all variable values in advance before parsing expressions. Or the variables in the expressions are indirectly related to the actual data. In such cases, you can define a custom environment object by simply implement the Environment trait.
@@ -104,25 +120,45 @@ The default environment object provided by the system is DefaultEnvironment. Bef
 The expressions are first compiled into bytecode (Chunk) and then cached or stored by the business system. When subsequent execution is required, the bytecode is run directly.
 - Compile expressions:
 ```rust
-use rspression::{Chunk, RspRunner};
+use rspression::{Chunk, DefaultEnvironment, Environment, RspRunner, Value};
 
-let mut runner = RspRunner::new();
-let chunk = runner.compile_source(&srcs).unwrap();
-let bytes: Vec<u8> = chunk.to_bytes();
-// write bytes to store or cache
-// ...
-```
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Compile expressions to bytecode
+    // 1. get expressions
+    let mut srcs = Vec::new();
+    srcs.push("x = a + b * c");
+    srcs.push("b = a * 2");
+    srcs.push("a = m + n");
+    srcs.push("c = n + w + b");
+    // 2. compile expressions
+    let mut runner = RspRunner::new();
+    let chunk = runner.compile_source(&srcs)?;
+    let bytes: Vec<u8> = chunk.to_bytes();
+    // 3. you can write bytes to store or cache
+    // write_to_your_storage(bytes);
 
-- Run bytecode:
-```rust
-use rspression::{Chunk, RspRunner};
+    // Run bytecode
+    // 1. read bytes from store or cache
+    // let bytes: Vec<u8> = read_from_your_storage();
+    // 2. construct chunk
+    let chunk = Chunk::from_bytes(&bytes);
+    // 3. define environment
+    let mut env = DefaultEnvironment::new();
+    env.put("m".to_string(), Value::Integer(2));
+    env.put("n".to_string(), Value::Integer(4));
+    env.put("w".to_string(), Value::Integer(6));
+    // 4. run bytecode
+    let mut runner = RspRunner::new();
+    runner.run_chunk(&chunk, &mut env)?;
 
-let mut runner = RspRunner::new();
-let env = get_env();
-// read bytes from store or cache
-// let bytes: Vec<u8> = ...
-let chunk = Chunk::from_bytes(&bytes);
-runner.run_chunk(&chunk, &mut env).unwrap();
+    // 5. check results
+    println!("x = {}", env.get("x").unwrap()); // x = 270
+    println!("a = {}", env.get("a").unwrap()); // a = 6
+    println!("b = {}", env.get("b").unwrap()); // b = 12
+    println!("c = {}", env.get("c").unwrap()); // c = 22
+
+    Ok(())
+}
 ```
 
 The Chunk object consists only of byte arrays with extremely high serialization and deserialization performance, making it suitable for cluster environments using caching services like Redis.

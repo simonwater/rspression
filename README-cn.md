@@ -44,20 +44,25 @@ cargo test --release --test runner_batch_tests -- test_compile_chunk --nocapture
 ```rust
 use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
 
-let mut runner = RspRunner::new();
-// Simple expression
-println!("1 + 2 * 3 = {}", runner.execute("1 + 2 * 3")?); // 1 + 2 * 3 = 7
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Basic arithmetic
+    let mut runner = RspRunner::new();
+    // Simple expression
+    println!("1 + 2 * 3 = {}", runner.execute("1 + 2 * 3")?); // 1 + 2 * 3 = 7
 
-// With variables
-let mut env = DefaultEnvironment::new();
-env.put("a".to_string(), Value::Integer(1));
-env.put("b".to_string(), Value::Integer(2));
-env.put("c".to_string(), Value::Integer(3));
-println!(
-    "a + b * c = {}",
-    runner.execute_with_env("a + b * c", &mut env)?
-); // a + b * c = 7
-println!("{}", runner.execute_with_env("a + b * c >= 6", &mut env)?); // true
+    // With variables
+    let mut env = DefaultEnvironment::new();
+    env.put("a".to_string(), Value::Integer(1));
+    env.put("b".to_string(), Value::Integer(2));
+    env.put("c".to_string(), Value::Integer(3));
+    println!(
+        "a + b * c = {}",
+        runner.execute_with_env("a + b * c", &mut env)?
+    ); // a + b * c = 7
+    println!("{}", runner.execute_with_env("a + b * c >= 6", &mut env)?); // true
+
+    Ok(())
+}
 ```
 
 ### 赋值运算
@@ -65,35 +70,45 @@ println!("{}", runner.execute_with_env("a + b * c >= 6", &mut env)?); // true
 ```rust
 use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
 
-let mut srcs = Vec::new();
-srcs.push("x = a + b * c");
-srcs.push("b = a * 2");
-srcs.push("a = m + n");
-srcs.push("c = n + w + b");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut srcs = Vec::new();
+    srcs.push("x = a + b * c");
+    srcs.push("b = a * 2");
+    srcs.push("a = m + n");
+    srcs.push("c = n + w + b");
 
-let mut runner = RspRunner::new();
-let mut env = DefaultEnvironment::new();
-env.put("m".to_string(), Value::Integer(2));
-env.put("n".to_string(), Value::Integer(4));
-env.put("w".to_string(), Value::Integer(6));
+    let mut runner = RspRunner::new();
+    let mut env = DefaultEnvironment::new();
+    env.put("m".to_string(), Value::Integer(2));
+    env.put("n".to_string(), Value::Integer(4));
+    env.put("w".to_string(), Value::Integer(6));
 
-runner.execute_multiple_with_env(&srcs, &mut env).unwrap();
-println!("x = {}", env.get("x").unwrap().as_integer()); // x = 270
-println!("a = {}", env.get("a").unwrap().as_integer()); // a = 6
-println!("b = {}", env.get("b").unwrap().as_integer()); // b = 12
-println!("c = {}", env.get("c").unwrap().as_integer()); // c = 22
+    runner.execute_multiple_with_env(&srcs, &mut env)?;
+    println!("x = {}", env.get("x").unwrap()); // x = 270
+    println!("a = {}", env.get("a").unwrap()); // a = 6
+    println!("b = {}", env.get("b").unwrap()); // b = 12
+    println!("c = {}", env.get("c").unwrap()); // c = 22
+
+    Ok(())
+}
 ```
 
 ###  定义环境
 表达式求值时，对于遇到的变量，求值器会从环境对象Environment中取值，赋值表达式则会把求值的结果写回到Environment中，因此对于表达式中用到的变量，具体含义需要在Environment中进行定义：
 ```rust
-let mut env = DefaultEnvironment::new();
-env.put("a".to_string(), Value::Integer(1));
-env.put("b".to_string(), Value::Integer(2));
-env.put("c".to_string(), Value::Integer(3));
-let mut runner = RspRunner::new();
-let r = runner.execute_with_env("a + b * c", &mut env)?;
-println!("{}", r) // 7
+use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut env = DefaultEnvironment::new();
+    env.put("a".to_string(), Value::Integer(1));
+    env.put("b".to_string(), Value::Integer(2));
+    env.put("c".to_string(), Value::Integer(3));
+    let mut runner = RspRunner::new();
+    let r = runner.execute_with_env("a + b * c", &mut env)?;
+    println!("{}", r); // 7
+
+    Ok(())
+}
 ```
 系统提供的默认环境对象为DefaultEnvironment，在执行表达式前，对于表达式中需要读取值的变量，都需要在DefaultEnvironment对象中有值。有时候需要执行的表达式数量较多，在对表达式做解析之前，业务层无法高效的把所有变量值都提前准备好，或者表达式中的变量和实际数据之间是间接的关联，这时候便可以根据需要自定义环境对象，只需实现Environment trait即可。
 
@@ -101,24 +116,45 @@ println!("{}", r) // 7
 先把表达式编译为字节码(Chunk)，由业务系统缓存或者存储字节码，后续需要执行时直接运行字节码。
 - 编译表达式：
 ```rust
-use rspression::{Chunk, RspRunner};
+use rspression::{Chunk, DefaultEnvironment, Environment, RspRunner, Value};
 
-let mut runner = RspRunner::new();
-let chunk = runner.compile_source(&srcs).unwrap();
-let bytes: Vec<u8> = chunk.to_bytes();
-// write bytes to store or cache
-// ...
-```
-- 运行字节码：
-```rust
-use rspression::{Chunk, RspRunner};
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Compile expressions to bytecode
+    // 1. get expressions
+    let mut srcs = Vec::new();
+    srcs.push("x = a + b * c");
+    srcs.push("b = a * 2");
+    srcs.push("a = m + n");
+    srcs.push("c = n + w + b");
+    // 2. compile expressions
+    let mut runner = RspRunner::new();
+    let chunk = runner.compile_source(&srcs)?;
+    let bytes: Vec<u8> = chunk.to_bytes();
+    // 3. you can write bytes to store or cache
+    // write_to_your_storage(bytes);
 
-let mut runner = RspRunner::new();
-let env = get_env();
-// read bytes from store or cache
-// let bytes: Vec<u8> = ...
-let chunk = Chunk::from_bytes(&bytes);
-runner.run_chunk(&chunk, &mut env).unwrap();
+    // Run bytecode
+    // 1. read bytes from store or cache
+    // let bytes: Vec<u8> = read_from_your_storage();
+    // 2. construct chunk
+    let chunk = Chunk::from_bytes(&bytes);
+    // 3. define environment
+    let mut env = DefaultEnvironment::new();
+    env.put("m".to_string(), Value::Integer(2));
+    env.put("n".to_string(), Value::Integer(4));
+    env.put("w".to_string(), Value::Integer(6));
+    // 4. run bytecode
+    let mut runner = RspRunner::new();
+    runner.run_chunk(&chunk, &mut env)?;
+
+    // 5. check results
+    println!("x = {}", env.get("x").unwrap()); // x = 270
+    println!("a = {}", env.get("a").unwrap()); // a = 6
+    println!("b = {}", env.get("b").unwrap()); // b = 12
+    println!("c = {}", env.get("c").unwrap()); // c = 22
+
+    Ok(())
+}
 ```
 Chunk对象只由字节数组构成，序列化、反序列化性能极高，适合集群环境使用redis等缓存服务做缓存的场景。
 

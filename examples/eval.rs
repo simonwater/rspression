@@ -3,9 +3,8 @@ use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Basic arithmetic
     let mut runner = RspRunner::new();
-
     // Simple expression
-    println!("1 + 2 * 3 = {}", runner.execute("1 + 2 * 3")?);
+    println!("1 + 2 * 3 = {}", runner.execute("1 + 2 * 3")?); // 1 + 2 * 3 = 7
 
     // With variables
     let mut env = DefaultEnvironment::new();
@@ -15,8 +14,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "a + b * c = {}",
         runner.execute_with_env("a + b * c", &mut env)?
-    );
-    println!("{}", runner.execute_with_env("a + b * c >= 6", &mut env)?);
+    ); // a + b * c = 7
+    println!("{}", runner.execute_with_env("a + b * c >= 6", &mut env)?); // true
 
     Ok(())
 }
