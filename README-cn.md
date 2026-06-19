@@ -22,10 +22,10 @@ rspression是一款用rust编写的高性能、轻量级表达式计算引擎，
 |  ----  | ----  |
 | 表达式总数量  |  5,000  |
 | 所有字符串总大小  |  195KB  |
-| 解释执行所有字符串用时  |  66ms  |
+| 解释执行所有字符串用时  |  **66ms**  |
 | 字符串编译为字节码用时  |  88ms  |
 | 编译后的字节码大小  |  298KB  |
-| 虚拟机运行字节码用时  |  5ms  |
+| 虚拟机运行字节码用时  |  **5ms**  |
 
 可以看到，占用195KB的5000条字符串表达式，从头解析语法树再递归执行的用时有66ms，虽然把这些表达式文本编译为字节码需要更多的88ms，但以后直接通过虚拟机运行这个字节码只需要5ms。而且字节码体积仅比原始文本多了 1/2，在分布式网络传输（如 Redis 缓存同步）中具备无可比拟的带宽优势。但是，如果你选择对所有表达式对应的语法树结构体直接进行序列化，那么这个结果必然会膨胀数倍甚至十倍。
 
@@ -116,7 +116,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 先把表达式编译为字节码(Chunk)，由业务系统缓存或者存储字节码，后续需要执行时直接运行字节码。
 - 编译表达式：
 ```rust
-use rspression::{Chunk, DefaultEnvironment, Environment, RspRunner, Value};
+use rspression::{ChunkView, DefaultEnvironment, Environment, RspRunner, Value};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Compile expressions to bytecode
@@ -137,7 +137,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. read bytes from store or cache
     // let bytes: Vec<u8> = read_from_your_storage();
     // 2. construct chunk
-    let chunk = Chunk::from_bytes(&bytes);
+    let chunk = ChunkView::from_bytes(&bytes)?;
     // 3. define environment
     let mut env = DefaultEnvironment::new();
     env.put("m".to_string(), Value::Integer(2));

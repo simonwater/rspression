@@ -1,4 +1,4 @@
-use rspression::Chunk;
+use rspression::{OwnedChunk, RspError, RspResult};
 use std::env;
 use std::fs::{self, File};
 use std::io::{BufWriter, Write};
@@ -35,17 +35,19 @@ impl TestHelper {
         }
     }
 
-    pub fn write_chunk_file(chunk: &Chunk, file_path: &Path) {
+    pub fn write_chunk_file(chunk: &OwnedChunk, file_path: &Path) {
         Self::create_parent_if_not_exist(file_path);
         let bytes = chunk.to_bytes();
         let _ = fs::write(file_path, bytes);
     }
 
-    pub fn read_chunk_file(file_path: &Path) -> Option<Chunk> {
+    pub fn read_chunk_file(file_path: &Path) -> RspResult<OwnedChunk> {
         if let Ok(bytes) = fs::read(file_path) {
-            Some(Chunk::from_bytes(&bytes))
+            OwnedChunk::from_bytes(bytes)
         } else {
-            None
+            Err(RspError::RuntimeError {
+                message: String::from("read file error"),
+            })
         }
     }
 }

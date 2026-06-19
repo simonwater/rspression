@@ -2,7 +2,7 @@ mod common;
 
 use common::TestHelper;
 use rand::Rng;
-use rspression::Chunk;
+use rspression::OwnedChunk;
 use rspression::RspRunner;
 use rspression::ir::{Analyzer, ExprInfo};
 use rspression::{DefaultEnvironment, Environment};
@@ -45,10 +45,10 @@ fn chunk_serialize_test() {
     println!("==========");
 }
 
-fn test_chunk(chunk: &Chunk) {
+fn test_chunk(chunk: &OwnedChunk) {
     println!(
         "开始进行字节码序列化反序列化，字节码大小(KB)：{}",
-        chunk.get_byte_size() / 1024
+        chunk.as_view().get_byte_size() / 1024
     );
     let start = std::time::Instant::now();
     let path = TestHelper::get_path(DIRECTORY, "Chunks.pb");
@@ -63,7 +63,7 @@ fn test_chunk(chunk: &Chunk) {
     println!("开始执行字节码：");
     let start = std::time::Instant::now();
     let mut runner = RspRunner::new();
-    runner.run_chunk(&chunk, &mut env).unwrap();
+    runner.run_chunk(&chunk.as_view(), &mut env).unwrap();
     println!("字节码执行完成。 耗时:{:?}", start.elapsed());
     check_result(&env);
 }

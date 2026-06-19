@@ -2,7 +2,7 @@ use bitvec::prelude::*;
 
 use crate::{values::Value, vm::OpCode};
 
-use super::Chunk;
+use super::OwnedChunk;
 use super::pool::ConstantPool;
 
 pub struct ChunkWriter {
@@ -26,11 +26,11 @@ impl ChunkWriter {
         self.is_var_const.clear();
     }
 
-    pub fn flush(&mut self) -> Chunk {
+    pub fn flush(&mut self) -> OwnedChunk {
         let codes = std::mem::take(&mut self.code);
         let constants = self.pool.to_bytes();
         let vars = self.is_var_const.as_raw_slice().to_vec();
-        Chunk {
+        OwnedChunk {
             codes,
             constants,
             vars,

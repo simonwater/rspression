@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::{
     RspError, RspResult,
-    chunk::{Chunk, ChunkWriter},
+    chunk::{ChunkWriter, OwnedChunk},
     expr::{
         AssignExpr, BinaryExpr, CallExpr, Expr, GetExpr, IdExpr, IfExpr, LiteralExpr, LogicExpr,
         SetExpr, UnaryExpr, Visitor,
@@ -50,7 +50,7 @@ impl OpCodeCompiler {
         Ok(())
     }
 
-    pub fn end_compile(&mut self) -> Chunk {
+    pub fn end_compile(&mut self) -> OwnedChunk {
         self.emit_op(OpCode::Exit);
         self.chunk_writer
             .set_variables(&self.var_set.iter().cloned().collect::<Vec<_>>());

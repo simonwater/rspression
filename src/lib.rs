@@ -16,7 +16,7 @@ pub mod values;
 pub mod visitors;
 pub mod vm;
 
-pub use chunk::Chunk;
+pub use chunk::{ChunkView, OwnedChunk};
 pub use environment::{DefaultEnvironment, Environment};
 pub use error::{RspError, RspResult};
 pub use field::Field;

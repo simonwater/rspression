@@ -1,6 +1,6 @@
 use crate::{
     RspResult,
-    chunk::{Chunk, ChunkReader},
+    chunk::{ChunkReader, ChunkView},
     environment::{DefaultEnvironment, Environment},
     error::RspError,
     functions::FunctionManager,
@@ -72,7 +72,7 @@ impl VM {
         }
     }
 
-    pub fn execute(&mut self, chunk: &Chunk) -> RspResult<Vec<ExResult>> {
+    pub fn execute(&mut self, chunk: &ChunkView) -> RspResult<Vec<ExResult>> {
         let mut reader = ChunkReader::new(&chunk.codes, &chunk.constants, &chunk.vars);
         let mut env = DefaultEnvironment::new();
         self.run(&mut reader, &mut env)
@@ -86,7 +86,7 @@ impl VM {
 
     pub fn execute_with_env<E: Environment>(
         &mut self,
-        chunk: &Chunk,
+        chunk: &ChunkView,
         env: &mut E,
     ) -> RspResult<Vec<ExResult>> {
         let mut reader = ChunkReader::new(&chunk.codes, &chunk.constants, &chunk.vars);

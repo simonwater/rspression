@@ -2,7 +2,7 @@ mod common;
 
 use common::TestHelper;
 use rand::Rng;
-use rspression::{Chunk, DefaultEnvironment, Environment, ExecuteMode, RspRunner};
+use rspression::{DefaultEnvironment, Environment, ExecuteMode, OwnedChunk, RspRunner};
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -48,11 +48,12 @@ fn test_compile_chunk() {
     let start = std::time::Instant::now();
     let mut runner = RspRunner::new();
     let chunk = runner.compile_source(&srcs).unwrap();
+    let chunk_view = chunk.as_view();
     println!("编译用时: {:?}", start.elapsed());
-    println!("字节码大小：{}KB.", chunk.get_byte_size() / 1024);
+    println!("字节码大小：{}KB.", chunk_view.get_byte_size() / 1024);
 
     let start = std::time::Instant::now();
-    runner.run_chunk(&chunk, &mut env).unwrap();
+    runner.run_chunk(&chunk_view, &mut env).unwrap();
     println!("字节码执行用时：{:?}", start.elapsed());
 
     check_values(&env);
@@ -64,6 +65,7 @@ fn test_file_chunk() {
     println!("字节码编译到文件再从文件读取执行");
     let file_path = TestHelper::get_path(DIRECTORY, "Chunks.pb");
     let chunk = create_and_get_chunk(&file_path);
+    let chunk = chunk.as_view();
     println!(
         "字节码大小：{}KB. code: {}Byte, consts: {}Byte, vars: {}Byte",
         chunk.get_byte_size() / 1024,
@@ -88,7 +90,7 @@ fn test_file_chunk() {
     println!("==========");
 }
 
-fn create_and_get_chunk(path: &PathBuf) -> Chunk {
+fn create_and_get_chunk(path: &PathBuf) -> OwnedChunk {
     let lines = get_expressions();
     let srcs: Vec<&str> = lines.iter().map(String::as_str).collect();
     let mut runner = RspRunner::new();

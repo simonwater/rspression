@@ -1,7 +1,7 @@
 use crate::Field;
 use crate::RspResult;
 use crate::Value;
-use crate::chunk::Chunk;
+use crate::chunk::{ChunkView, OwnedChunk};
 use crate::environment::{DefaultEnvironment, Environment};
 use crate::expr::Expr;
 use crate::ir::{Analyzer, ExprInfo};
@@ -70,7 +70,7 @@ impl RspRunner {
 
         let results = if self.execute_mode == ExecuteMode::ChunkVM {
             let chunk = self.compile_ir(&expr_infos)?;
-            self.run_chunk(&chunk, env)
+            self.run_chunk(&chunk.as_view(), env)
         } else {
             self.run_ir(&expr_infos, env)
         };
@@ -106,7 +106,7 @@ impl RspRunner {
 
     pub fn run_chunk<E: Environment>(
         &mut self,
-        chunk: &Chunk,
+        chunk: &ChunkView,
         env: &mut E,
     ) -> RspResult<Vec<Value>> {
         // let chunk_reader = ChunkReader::new(chunk, self.context.get_tracer());
@@ -137,14 +137,14 @@ impl RspRunner {
         Ok(exprs)
     }
 
-    pub fn compile_source(&mut self, expressions: &[&str]) -> RspResult<Chunk> {
+    pub fn compile_source(&mut self, expressions: &[&str]) -> RspResult<OwnedChunk> {
         let exprs = self.parse(expressions)?;
         let ana = Analyzer::new(exprs, self.need_sort);
         let expr_infos = ana.analyze()?;
         self.compile_ir(&expr_infos)
     }
 
-    pub fn compile_ir(&mut self, expr_infos: &[&ExprInfo]) -> RspResult<Chunk> {
+    pub fn compile_ir(&mut self, expr_infos: &[&ExprInfo]) -> RspResult<OwnedChunk> {
         let mut compiler = OpCodeCompiler::new();
         compiler.begin_compile();
         for expr_info in expr_infos {

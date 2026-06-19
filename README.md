@@ -22,10 +22,10 @@ To evaluate the advantages of the bytecode virtual machine, I conducted a benchm
 | ---- | ---- |
 | Total Number of Expressions | 5,000 |
 | Total Size of All Strings | 195 KB |
-| Time to Interpret and Execute All Strings | 66 ms |
+| Time to Interpret and Execute All Strings | **66 ms** |
 | Time to Compile Strings into Bytecode | 88 ms |
 | Compiled Bytecode Size | 298 KB |
-| Time to Execute Bytecode via VM | 5 ms |
+| Time to Execute Bytecode via VM | **5 ms** |
 
 As shown in the results, parsing the 5,000 string expressions (totaling 195 KB) from scratch into an AST and executing them recursively takes 66 ms. Although compiling these raw expression texts into bytecode requires a slightly higher upfront cost of 88 ms, executing this bytecode directly via the virtual machine afterwards takes only 5 ms. 
 
@@ -120,7 +120,7 @@ The default environment object provided by the system is DefaultEnvironment. Bef
 The expressions are first compiled into bytecode (Chunk) and then cached or stored by the business system. When subsequent execution is required, the bytecode is run directly.
 - Compile expressions:
 ```rust
-use rspression::{Chunk, DefaultEnvironment, Environment, RspRunner, Value};
+use rspression::{ChunkView, DefaultEnvironment, Environment, RspRunner, Value};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Compile expressions to bytecode
@@ -141,7 +141,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. read bytes from store or cache
     // let bytes: Vec<u8> = read_from_your_storage();
     // 2. construct chunk
-    let chunk = Chunk::from_bytes(&bytes);
+    let chunk = ChunkView::from_bytes(&bytes)?;
     // 3. define environment
     let mut env = DefaultEnvironment::new();
     env.put("m".to_string(), Value::Integer(2));

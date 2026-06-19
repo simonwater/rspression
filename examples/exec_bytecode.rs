@@ -1,4 +1,4 @@
-use rspression::{Chunk, DefaultEnvironment, Environment, RspRunner, Value};
+use rspression::{ChunkView, DefaultEnvironment, Environment, RspRunner, Value};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Compile expressions to bytecode
@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. read bytes from store or cache
     // let bytes: Vec<u8> = read_from_your_storage();
     // 2. construct chunk
-    let chunk = Chunk::from_bytes(&bytes);
+    let chunk = ChunkView::from_bytes(&bytes)?;
     // 3. define environment
     let mut env = DefaultEnvironment::new();
     env.put("m".to_string(), Value::Integer(2));
