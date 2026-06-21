@@ -142,7 +142,7 @@ impl VM {
                 OpCode::GetGlobal => {
                     let name = self.read_str(reader);
                     if let Some(value) = env.get(name) {
-                        self.push(value.clone());
+                        self.push(value.clone()); // clone the value in env
                     } else {
                         return Err(RspError::RuntimeError {
                             message: format!("Undefined variable: {}, order: {}", name, exp_order),
