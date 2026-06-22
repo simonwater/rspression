@@ -195,21 +195,14 @@ impl<'a> Scanner<'a> {
         }
 
         let mut is_double = false;
-        if self.peek() == '.' {
-            self.advance();
-            if self.peek().is_ascii_digit() {
-                // 小数点后必须有数字
-                is_double = true;
-                while self.peek().is_ascii_digit() {
-                    self.advance();
-                }
-            } else {
-                return Err(RspError::ParseError {
-                    line: self.line,
-                    message: "Invalid number format".to_string(),
-                });
+        if self.peek() == '.' && self.peek_next().is_ascii_digit() {
+            is_double = true;
+            self.advance(); // 吞掉 '.'
+            while self.peek().is_ascii_digit() {
+                self.advance();
             }
         }
+        // 类似123.to_string()的情况交给parser处理，此处不报异常
 
         self.make_token(TokenType::Number(if is_double {
             NumberType::Double
