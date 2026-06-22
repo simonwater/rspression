@@ -22,9 +22,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let chunk = ChunkView::from_bytes(&bytes)?;
     // 3. define environment
     let mut env = DefaultEnvironment::new();
-    env.put("m".to_string(), Value::Integer(2));
-    env.put("n".to_string(), Value::Integer(4));
-    env.put("w".to_string(), Value::Integer(6));
+    env.put("m".into(), Value::Integer(2));
+    env.put("n".into(), Value::Integer(4));
+    env.put("w".into(), Value::Integer(6));
     // 4. run bytecode
     let mut runner = RspRunner::new();
     runner.run_chunk(&chunk, &mut env)?;

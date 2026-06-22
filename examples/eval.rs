@@ -8,9 +8,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // With variables
     let mut env = DefaultEnvironment::new();
-    env.put("a".to_string(), Value::Integer(1));
-    env.put("b".to_string(), Value::Integer(2));
-    env.put("c".to_string(), Value::Integer(3));
+    env.put("a".into(), Value::Integer(1));
+    env.put("b".into(), Value::Integer(2));
+    env.put("c".into(), Value::Integer(3));
     println!(
         "a + b * c = {}",
         runner.execute_with_env("a + b * c", &mut env)?

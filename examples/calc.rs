@@ -9,9 +9,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut runner = RspRunner::new();
     let mut env = DefaultEnvironment::new();
-    env.put("m".to_string(), Value::Integer(2));
-    env.put("n".to_string(), Value::Integer(4));
-    env.put("w".to_string(), Value::Integer(6));
+    env.put("m".into(), Value::Integer(2));
+    env.put("n".into(), Value::Integer(4));
+    env.put("w".into(), Value::Integer(6));
 
     runner.execute_multiple_with_env(&srcs, &mut env)?;
     println!("x = {}", env.get("x").unwrap()); // x = 270

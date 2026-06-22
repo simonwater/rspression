@@ -165,9 +165,9 @@ mod tests {
 
         runner = RspRunner::new();
         let mut env = DefaultEnvironment::new();
-        env.put("m".to_string(), 2.into());
-        env.put("n".to_string(), 4.into());
-        env.put("w".to_string(), 6.into());
+        env.put("m".into(), 2.into());
+        env.put("n".into(), 4.into());
+        env.put("w".into(), 6.into());
         runner.execute_multiple_with_env(&srcs, &mut env).unwrap();
         assert_eq!(270, env.get("x").unwrap().as_integer());
         assert_eq!(270, env.get("y").unwrap().as_integer());
@@ -210,9 +210,9 @@ mod tests {
 
         runner = RspRunner::new();
         let mut env = DefaultEnvironment::new();
-        env.put("m".to_string(), 2.into());
-        env.put("n".to_string(), 4.into());
-        env.put("w".to_string(), 6.into());
+        env.put("m".into(), 2.into());
+        env.put("n".into(), 4.into());
+        env.put("w".into(), 6.into());
         let result = runner.execute_multiple_with_env(&srcs, &mut env).unwrap();
         assert_eq!(270, env.get("x").unwrap().as_integer());
         assert_eq!(270, env.get("y").unwrap().as_integer());

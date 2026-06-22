@@ -98,7 +98,7 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
         if let Expr::Id(IdExpr { name }) = &**left {
             // Variable assignment
             let value = self.evaluate(right)?;
-            self.environment.put(name.lexeme.to_string(), value.clone());
+            self.environment.put(name.lexeme.into(), value.clone());
             return Ok(value);
         } else {
             Err(RspError::RuntimeError {

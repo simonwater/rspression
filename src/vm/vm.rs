@@ -152,8 +152,8 @@ impl VM {
                 OpCode::SetGlobal => {
                     let name = self.read_str(reader);
                     let value = self.peek().clone();
-                    
-                    if !env.put(name.to_string(), value) {
+
+                    if !env.put(name.into(), value) {
                         return Err(RspError::RuntimeError {
                             message: format!("Undefined variable: {}, order: {}", name, exp_order),
                         });

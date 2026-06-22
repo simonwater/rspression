@@ -39,9 +39,9 @@ fn test_variables() {
     let mut runner = RspRunner::new();
     let mut env = DefaultEnvironment::new();
 
-    env.put("a".to_string(), Value::Integer(1));
-    env.put("b".to_string(), Value::Integer(2));
-    env.put("c".to_string(), Value::Integer(3));
+    env.put("a".into(), Value::Integer(1));
+    env.put("b".into(), Value::Integer(2));
+    env.put("c".into(), Value::Integer(3));
 
     let result = runner
         .execute_with_env("x = y = a + b * c", &mut env)
@@ -108,9 +108,9 @@ fn test_logical_operations() {
 fn test_muilti_evaluate() {
     let mut env = DefaultEnvironment::new();
 
-    env.put("a".to_string(), Value::Integer(1));
-    env.put("b".to_string(), Value::Integer(2));
-    env.put("c".to_string(), Value::Integer(3));
+    env.put("a".into(), Value::Integer(1));
+    env.put("b".into(), Value::Integer(2));
+    env.put("c".into(), Value::Integer(3));
     let mut lines = Vec::new();
     lines.push("a + b * c - 100 / 5 ** 2 ** 1");
     lines.push("a + b * c >= 6");
@@ -143,9 +143,9 @@ fn test_calculation() {
 
     let mut runner = RspRunner::new();
     let mut env = DefaultEnvironment::new();
-    env.put("m".to_string(), Value::Integer(2));
-    env.put("n".to_string(), Value::Integer(4));
-    env.put("w".to_string(), Value::Integer(6));
+    env.put("m".into(), Value::Integer(2));
+    env.put("n".into(), Value::Integer(4));
+    env.put("w".into(), Value::Integer(6));
     let results = runner.execute_multiple_with_env(&srcs, &mut env).unwrap();
     assert_eq!(126, env.get("x").unwrap().as_integer());
     assert_eq!(6, env.get("a").unwrap().as_integer());

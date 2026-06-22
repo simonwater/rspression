@@ -1,4 +1,5 @@
 use crate::values::Value;
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 pub trait Environment {
@@ -6,46 +7,50 @@ pub trait Environment {
         true
     }
     fn get(&self, name: &str) -> Option<&Value>;
-    fn put(&mut self, name: String, value: Value) -> bool;
+    fn put(&mut self, name: Cow<str>, value: Value) -> bool;
     fn extend<T: IntoIterator<Item = (String, Value)>>(&mut self, iter: T);
     fn size(&self) -> usize;
 }
 
 #[derive(Debug, Clone)]
 pub struct DefaultEnvironment {
-    values: HashMap<String, Value>,
+    map: HashMap<String, Value>,
 }
 
 impl DefaultEnvironment {
     pub fn new() -> Self {
         Self {
-            values: HashMap::new(),
+            map: HashMap::new(),
         }
     }
 
     pub fn with_capacity(c: usize) -> Self {
         Self {
-            values: HashMap::with_capacity(c),
+            map: HashMap::with_capacity(c),
         }
     }
 }
 
 impl Environment for DefaultEnvironment {
     fn get(&self, name: &str) -> Option<&Value> {
-        self.values.get(name)
+        self.map.get(name)
     }
 
-    fn put(&mut self, name: String, value: Value) -> bool {
-        self.values.insert(name, value);
+    fn put(&mut self, name: Cow<str>, value: Value) -> bool {
+        if let Some(old_value) = self.map.get_mut(name.as_ref()) {
+            *old_value = value;
+        } else {
+            self.map.insert(name.into_owned(), value);
+        }
         true
     }
 
     fn extend<T: IntoIterator<Item = (String, Value)>>(&mut self, iter: T) {
-        self.values.extend(iter);
+        self.map.extend(iter);
     }
 
     fn size(&self) -> usize {
-        self.values.len()
+        self.map.len()
     }
 }
 
