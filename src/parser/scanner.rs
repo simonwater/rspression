@@ -1,17 +1,13 @@
 use crate::error::{RspError, RspResult};
 use crate::values::Value;
 use crate::{Token, TokenType};
-use std::iter::Peekable;
-use std::rc::Rc;
 use std::str::Chars;
 
 pub struct Scanner<'a> {
     source: &'a str,
-    chars: Peekable<Chars<'a>>,
-    tokens: Vec<Rc<Token<'a>>>,
+    chars: Chars<'a>,
+    tokens: Vec<Token<'a>>,
     current_char: Option<char>,
-    start: usize,
-    current: usize,
     line: usize,
 }
 
@@ -31,31 +27,32 @@ fn is_chinese_character(c: char) -> bool {
 impl<'a> Scanner<'a> {
     pub fn new(source: &'a str) -> Self {
         Self {
-            chars: source.chars().peekable(),
+            chars: source.chars(),
             source: source,
-            tokens: Vec::<Rc<Token>>::new(),
+            tokens: Vec::<Token>::new(),
             current_char: None,
-            start: 0,
-            current: 0,
             line: 1,
         }
     }
 
-    pub fn scan_tokens(&mut self) -> RspResult<Vec<Rc<Token<'a>>>> {
+    pub fn scan_tokens(&mut self) -> RspResult<Vec<Token<'a>>> {
         while !self.is_at_end() {
             let token = self.next_token()?;
-            self.tokens.push(Rc::new(token));
+            if self.is_at_end() {
+                break;
+            }
+            self.tokens.push(token);
         }
 
         let token = Token::new(TokenType::Eof, "", None, self.line);
-        self.tokens.push(Rc::new(token));
+        self.tokens.push(token);
 
         Ok(std::mem::take(&mut self.tokens))
     }
 
     pub fn next_token(&mut self) -> RspResult<Token<'a>> {
         self.skip_whitespace();
-        self.start = self.current;
+        self.source = self.chars.as_str();
         if self.is_at_end() {
             return self.make_token(TokenType::Eof);
         }
@@ -189,9 +186,11 @@ impl<'a> Scanner<'a> {
             });
         }
 
-        self.advance(); // Closing quote
+        self.advance(); // closing quote
 
-        let value = self.source[self.start + 1..self.current - 1].to_string();
+        let len = self.source.len() - self.chars.as_str().len();
+        let lexeme = &self.source[..len]; // 包含引号
+        let value = self.source[1..lexeme.len() - 1].to_string();
         Ok(self.token_with_literal(TokenType::String, Some(Value::String(value))))
     }
 
@@ -217,15 +216,16 @@ impl<'a> Scanner<'a> {
             }
         }
 
-        let value_str = &self.source[self.start..self.current];
+        let len = self.source.len() - self.chars.as_str().len();
+        let lexeme = &self.source[..len];
         let value = if is_double {
-            let d: f64 = value_str.parse().map_err(|_| RspError::ParseError {
+            let d: f64 = lexeme.parse().map_err(|_| RspError::ParseError {
                 line: self.line,
                 message: "Invalid number".to_string(),
             })?;
             Value::Double(d)
         } else {
-            let i: i32 = value_str.parse().map_err(|_| RspError::ParseError {
+            let i: i32 = lexeme.parse().map_err(|_| RspError::ParseError {
                 line: self.line,
                 message: "Invalid number".to_string(),
             })?;
@@ -240,8 +240,9 @@ impl<'a> Scanner<'a> {
             self.advance();
         }
 
-        let text = &self.source[self.start..self.current];
-        let token_type = self.identifier_type(text);
+        let len = self.source.len() - self.chars.as_str().len();
+        let lexeme = &self.source[..len];
+        let token_type = self.identifier_type(lexeme);
         self.make_token(token_type)
     }
 
@@ -266,13 +267,12 @@ impl<'a> Scanner<'a> {
     }
 
     fn is_at_end(&mut self) -> bool {
-        self.chars.peek().is_none()
+        self.chars.as_str().is_empty()
     }
 
     fn advance(&mut self) -> Option<char> {
         if let Some(c) = self.chars.next() {
             self.current_char = Some(c);
-            self.current += c.len_utf8();
             return Some(c);
         } else {
             self.current_char = None;
@@ -292,7 +292,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn peek(&mut self) -> char {
-        if let Some(&c) = self.chars.peek() {
+        if let Some(c) = self.chars.clone().next() {
             c
         } else {
             '\0'
@@ -301,8 +301,8 @@ impl<'a> Scanner<'a> {
 
     fn peek_next(&mut self) -> char {
         let mut iter = self.chars.clone();
-        iter.next();
-        if let Some(&c) = iter.peek() { c } else { '\0' }
+        iter.next(); // current
+        if let Some(c) = iter.next() { c } else { '\0' }
     }
 
     fn make_token(&mut self, token_type: TokenType) -> RspResult<Token<'a>> {
@@ -310,7 +310,8 @@ impl<'a> Scanner<'a> {
     }
 
     fn token_with_literal(&mut self, token_type: TokenType, literal: Option<Value>) -> Token<'a> {
-        let text = &self.source[self.start..self.current];
-        Token::new(token_type, text, literal, self.line)
+        let len = self.source.len() - self.chars.as_str().len();
+        let lexeme = &self.source[..len];
+        Token::new(token_type, lexeme, literal, self.line)
     }
 }
