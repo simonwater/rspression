@@ -26,6 +26,7 @@ impl<'a> Parser<'a> {
         if self.current.token_type != TokenType::Eof {
             return Err(RspError::ParseError {
                 line: self.current.line,
+                position: self.current.position,
                 message: format!("Unknown token: {:?}", self.current),
             });
         }
@@ -80,6 +81,7 @@ impl<'a> Parser<'a> {
             TokenType::If => self.if_(token),
             _ => Err(RspError::ParseError {
                 line: token.line,
+                position: token.position,
                 message: format!("Unknown token: {:?}", token),
             }),
         }
@@ -110,6 +112,7 @@ impl<'a> Parser<'a> {
             TokenType::Dot => self.get(lhs, token),
             _ => Err(RspError::ParseError {
                 line: token.line,
+                position: token.position,
                 message: format!("Unknown infix operator: {:?}", token),
             }),
         }
@@ -193,7 +196,7 @@ impl<'a> Parser<'a> {
 
     fn literal(&mut self, token: Token<'a>) -> RspResult<Expr<'a>> {
         let value = match token.token_type {
-            TokenType::Number(num_type) => self.number(token.lexeme, num_type, token.line)?,
+            TokenType::Number(num_type) => self.number(token, num_type)?,
             TokenType::String => self.string(token.lexeme),
             TokenType::True => Value::Boolean(true),
             TokenType::False => Value::Boolean(false),
@@ -212,18 +215,20 @@ impl<'a> Parser<'a> {
         Value::from(s)
     }
 
-    fn number(&mut self, lexeme: &str, number_type: NumberType, line: usize) -> RspResult<Value> {
+    fn number(&mut self, token: Token, number_type: NumberType) -> RspResult<Value> {
         match number_type {
             NumberType::Double => {
-                let d: f64 = lexeme.parse().map_err(|_| RspError::ParseError {
-                    line,
+                let d: f64 = token.lexeme.parse().map_err(|_| RspError::ParseError {
+                    line: token.line,
+                    position: token.position,
                     message: "Invalid number".to_string(),
                 })?;
                 Ok(Value::Double(d))
             }
             NumberType::Integer => {
-                let i: i32 = lexeme.parse().map_err(|_| RspError::ParseError {
-                    line,
+                let i: i32 = token.lexeme.parse().map_err(|_| RspError::ParseError {
+                    line: token.line,
+                    position: token.position,
                     message: "Invalid number".to_string(),
                 })?;
                 Ok(Value::Integer(i))
@@ -244,6 +249,7 @@ impl<'a> Parser<'a> {
     pub fn parse_err(&self, message: String) -> RspError {
         RspError::ParseError {
             line: self.current.line,
+            position: self.current.position,
             message,
         }
     }
@@ -265,6 +271,7 @@ impl<'a> Parser<'a> {
         } else {
             Err(RspError::ParseError {
                 line: self.current.line,
+                position: self.current.position,
                 message: message.to_string(),
             })
         }

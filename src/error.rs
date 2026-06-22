@@ -2,8 +2,12 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum RspError {
-    #[error("Parse error at line {line}: {message}")]
-    ParseError { line: usize, message: String },
+    #[error("Parse error at line {line}, position {position}: {message}")]
+    ParseError {
+        line: usize,
+        position: usize,
+        message: String,
+    },
 
     #[error("Analyze error: {message}")]
     AnalyzeError { message: String },

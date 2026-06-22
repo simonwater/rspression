@@ -63,14 +63,16 @@ pub struct Token<'a> {
     pub token_type: TokenType,
     pub lexeme: &'a str,
     pub line: usize,
+    pub position: usize,
 }
 
 impl<'a> Token<'a> {
-    pub fn new(token_type: TokenType, lexeme: &'a str, line: usize) -> Self {
+    pub fn new(token_type: TokenType, lexeme: &'a str, line: usize, position: usize) -> Self {
         Self {
             token_type,
             lexeme,
             line,
+            position,
         }
     }
 }
@@ -81,6 +83,7 @@ impl<'a> Default for Token<'a> {
             token_type: TokenType::Error,
             lexeme: "",
             line: 0,
+            position: 0,
         }
     }
 }

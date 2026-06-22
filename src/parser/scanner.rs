@@ -3,6 +3,7 @@ use crate::error::{RspError, RspResult};
 use std::str::Chars;
 
 pub struct Scanner<'a> {
+    source: &'a str,
     token_start_str: &'a str,
     chars: Chars<'a>,
     tokens: Vec<Token<'a>>,
@@ -26,6 +27,7 @@ fn is_chinese_character(c: char) -> bool {
 impl<'a> Scanner<'a> {
     pub fn new(source: &'a str) -> Self {
         Self {
+            source,
             chars: source.chars(),
             token_start_str: source,
             tokens: Vec::<Token>::new(),
@@ -43,7 +45,7 @@ impl<'a> Scanner<'a> {
             self.tokens.push(token);
         }
 
-        let token = Token::new(TokenType::Eof, "", self.line);
+        let token = Token::new(TokenType::Eof, "", self.line, self.source.len());
         self.tokens.push(token);
 
         Ok(std::mem::take(&mut self.tokens))
@@ -143,7 +145,8 @@ impl<'a> Scanner<'a> {
                 } else {
                     return Err(RspError::ParseError {
                         line: self.line,
-                        message: format!("Unexpected character: {}", c),
+                        position: self.source.len() - self.chars.as_str().len(),
+                        message: format!("Unexpected character: {}", self.peek()),
                     });
                 }
             }
@@ -153,17 +156,19 @@ impl<'a> Scanner<'a> {
                 } else {
                     return Err(RspError::ParseError {
                         line: self.line,
-                        message: format!("Unexpected character: {}", c),
+                        position: self.source.len() - self.chars.as_str().len(), // 尚未消费的字符有问题
+                        message: format!("Unexpected character: {}", self.peek()),
                     });
                 }
             }
             '"' => self.string(),
             c if c.is_ascii_digit() => self.number(),
             c if is_alpha(c) => self.identifier(),
-            '\0' => Ok(Token::new(TokenType::Eof, "", self.line)),
+            '\0' => Ok(Token::new(TokenType::Eof, "", self.line, self.source.len())),
             _ => {
                 return Err(RspError::ParseError {
                     line: self.line,
+                    position: self.source.len() - self.chars.as_str().len() - c.len_utf8(), // 已消费的字符有问题
                     message: format!("Unexpected character: {}", c),
                 });
             }
@@ -181,6 +186,7 @@ impl<'a> Scanner<'a> {
         if self.is_at_end() {
             return Err(RspError::ParseError {
                 line: self.line,
+                position: self.source.len(),
                 message: "Unterminated string".to_string(),
             });
         }
@@ -282,8 +288,9 @@ impl<'a> Scanner<'a> {
     }
 
     fn make_token(&mut self, token_type: TokenType) -> RspResult<Token<'a>> {
-        let len = self.token_start_str.len() - self.chars.as_str().len();
-        let lexeme = &self.token_start_str[..len];
-        Ok(Token::new(token_type, lexeme, self.line))
+        let cur_len = self.token_start_str.len() - self.chars.as_str().len();
+        let lexeme = &self.token_start_str[..cur_len];
+        let position = self.source.len() - self.token_start_str.len(); // token 起始位置
+        Ok(Token::new(token_type, lexeme, self.line, position))
     }
 }
