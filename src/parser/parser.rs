@@ -179,13 +179,16 @@ impl<'a> Parser<'a> {
         let condition = self.expression_prec(Precedence::PREC_NONE)?;
         self.consume(crate::TokenType::Comma, "Expected ',' after condition")?;
         let then_branch = self.expression_prec(Precedence::PREC_NONE)?;
-        self.consume(crate::TokenType::Comma, "Expected ',' after then branch")?;
-        let else_branch = self.expression_prec(Precedence::PREC_NONE)?;
+        let else_branch = if self.match_token(&[crate::TokenType::Comma])? {
+            Some(self.expression_prec(Precedence::PREC_NONE)?)
+        } else {
+            None
+        };
         self.consume(
             crate::TokenType::RightParen,
             "Expected ')' after else branch",
         )?;
-        Ok(Expr::if_expr(condition, then_branch, Some(else_branch)))
+        Ok(Expr::if_expr(condition, then_branch, else_branch))
     }
 
     fn literal(&mut self, token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
