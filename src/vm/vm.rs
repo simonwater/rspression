@@ -152,6 +152,7 @@ impl VM {
                 OpCode::SetGlobal => {
                     let name = self.read_str(reader);
                     let value = self.peek().clone();
+                    
                     if !env.put(name.to_string(), value) {
                         return Err(RspError::RuntimeError {
                             message: format!("Undefined variable: {}, order: {}", name, exp_order),
@@ -162,7 +163,7 @@ impl VM {
                     let name = self.read_str(reader);
                     let object = self.pop();
                     if let Value::Instance(instance) = object {
-                        if let Some(value) = instance.get(&name) {
+                        if let Some(value) = instance.borrow().get(&name) {
                             self.push(value.clone());
                         } else {
                             return Err(RspError::RuntimeError {
@@ -184,9 +185,9 @@ impl VM {
                 OpCode::SetProperty => {
                     let name = self.read_str(reader);
                     let object = self.pop();
-                    if let Value::Instance(mut instance) = object {
+                    if let Value::Instance(instance) = object {
                         let value = self.peek().clone();
-                        instance.set(name.to_string(), value);
+                        instance.borrow_mut().set(name.to_string(), value);
                     } else {
                         return Err(RspError::RuntimeError {
                             message: format!(

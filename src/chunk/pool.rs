@@ -46,8 +46,8 @@ impl ConstantPool {
                     let len = u16::from_be_bytes([len_b[0], len_b[1]]) as usize;
                     let s_b = &bytes[i..i + len];
                     i += len;
-                    let s = String::from_utf8(s_b.to_vec()).expect("utf8");
-                    Value::String(s)
+                    let s = str::from_utf8(s_b).expect("utf8");
+                    Value::from(s)
                 }
                 _ => panic!("unsupported constant tag: {}", tag),
             };

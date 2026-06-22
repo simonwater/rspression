@@ -210,7 +210,7 @@ impl<'a> Parser<'a> {
         }
         // 去除前后引号
         let s = lexeme[1..lexeme.len() - 1].to_string();
-        Value::String(s)
+        Value::String(Rc::from(s))
     }
 
     fn number(&mut self, lexeme: &str, number_type: NumberType, line: usize) -> RspResult<Value> {

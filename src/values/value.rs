@@ -1,13 +1,15 @@
 use crate::values::Instance;
+use std::cell::RefCell;
 use std::fmt;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Integer(i32),
     Double(f64),
-    String(String),
+    String(Rc<str>),
     Boolean(bool),
-    Instance(Box<Instance>),
+    Instance(Rc<RefCell<Instance>>),
     Null,
 }
 
@@ -78,7 +80,7 @@ impl Value {
 
     pub fn as_str(&self) -> &str {
         match self {
-            Value::String(s) => &s,
+            Value::String(s) => s.as_ref(),
             _ => "",
         }
     }
@@ -90,16 +92,16 @@ impl Value {
         }
     }
 
-    pub fn as_instance(&self) -> Option<&Instance> {
+    pub fn as_instance(&self) -> Option<Rc<RefCell<Instance>>> {
         match self {
-            Value::Instance(i) => Some(i),
+            Value::Instance(i) => Some(i.clone()),
             _ => None,
         }
     }
 
-    pub fn as_instance_mut(&mut self) -> Option<&mut Instance> {
+    pub fn as_instance_mut(&mut self) -> Option<Rc<RefCell<Instance>>> {
         match self {
-            Value::Instance(i) => Some(i),
+            Value::Instance(i) => Some(i.clone()),
             _ => None,
         }
     }
@@ -150,13 +152,19 @@ impl From<f64> for Value {
 
 impl From<String> for Value {
     fn from(value: String) -> Self {
-        Value::String(value)
+        Value::String(Rc::from(value))
     }
 }
 
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
-        Value::String(value.to_string())
+        Value::String(Rc::from(value))
+    }
+}
+
+impl From<&String> for Value {
+    fn from(value: &String) -> Self {
+        Value::String(Rc::from(value.as_ref()))
     }
 }
 

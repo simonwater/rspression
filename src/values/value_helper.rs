@@ -11,11 +11,12 @@ pub fn evaluate_binary(left: &Value, right: &Value, operator: &TokenType) -> Rsp
                 });
             }
             if left.is_string() || right.is_string() {
-                Ok(Value::String(format!(
-                    "{}{}",
-                    left.as_str(),
-                    right.as_str()
-                )))
+                let l_str = left.as_str();
+                let r_str = right.as_str();
+                let mut cap = String::with_capacity(l_str.len() + r_str.len());
+                cap.push_str(l_str);
+                cap.push_str(r_str);
+                Ok(Value::from(cap))
             } else {
                 if left.is_double() || right.is_double() {
                     Ok(Value::Double(left.as_double() + right.as_double()))

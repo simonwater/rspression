@@ -59,7 +59,7 @@ impl ChunkWriter {
         let n = vars.len();
         self.is_var_const.resize(n, false);
         for var in vars {
-            let idx = self.pool.add_const(Value::String(var.clone()));
+            let idx = self.pool.add_const(Value::from(var));
             if idx >= self.is_var_const.len() {
                 self.is_var_const.resize(idx + 1, false);
             }

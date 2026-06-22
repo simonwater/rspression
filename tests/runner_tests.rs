@@ -67,10 +67,10 @@ fn test_strings() {
     let mut runner = RspRunner::new();
 
     let result = runner.execute("\"aa\" + \"bb\"").unwrap();
-    assert_eq!(result, Value::String("aabb".to_string()));
+    assert_eq!(result, Value::from("aabb"));
 
     let result = runner.execute("\"你好\" + \"bb！\"").unwrap();
-    assert_eq!(result, Value::String("你好bb！".to_string()));
+    assert_eq!(result, Value::from("你好bb！"));
 }
 
 #[test]

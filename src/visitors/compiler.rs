@@ -161,7 +161,7 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
     }
 
     fn visit_id(&mut self, expr: &IdExpr) -> RspResult<()> {
-        let constant = self.make_constant(Value::String(expr.name.lexeme.to_string()));
+        let constant = self.make_constant(Value::from(expr.name.lexeme));
         self.emit_op_with_arg(OpCode::GetGlobal, constant as i32);
         Ok(())
     }
@@ -169,7 +169,7 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
     fn visit_assign(&mut self, expr: &AssignExpr) -> RspResult<()> {
         self.execute(&expr.right)?;
         if let Expr::Id(id_expr) = &*expr.left {
-            let constant = self.make_constant(Value::String(id_expr.name.lexeme.to_string()));
+            let constant = self.make_constant(Value::from(id_expr.name.lexeme));
             self.emit_op_with_arg(OpCode::SetGlobal, constant as i32);
         }
         Ok(())
@@ -177,7 +177,7 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
 
     fn visit_call(&mut self, expr: &CallExpr) -> RspResult<()> {
         if let Expr::Id(id_expr) = &*expr.callee {
-            let name = &id_expr.name.lexeme;
+            let name = id_expr.name.lexeme;
             let func = self
                 .function_manager
                 .get(name)
@@ -199,7 +199,7 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
             for arg in &expr.arguments {
                 self.execute(arg)?;
             }
-            let constant = self.make_constant(Value::String(name.to_string()));
+            let constant = self.make_constant(Value::from(name));
             self.emit_op_with_arg(OpCode::Call, constant as i32);
         }
         Ok(())
@@ -224,7 +224,7 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
 
     fn visit_get(&mut self, expr: &GetExpr) -> RspResult<()> {
         self.execute(&expr.object)?;
-        let constant = self.make_constant(Value::String(expr.name.lexeme.to_string()));
+        let constant = self.make_constant(Value::from(expr.name.lexeme));
         self.emit_op_with_arg(OpCode::GetProperty, constant as i32);
         Ok(())
     }
@@ -232,7 +232,7 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
     fn visit_set(&mut self, expr: &SetExpr) -> RspResult<()> {
         self.execute(&expr.value)?;
         self.execute(&expr.object)?;
-        let constant = self.make_constant(Value::String(expr.name.lexeme.to_string()));
+        let constant = self.make_constant(Value::from(expr.name.lexeme));
         self.emit_op_with_arg(OpCode::SetProperty, constant as i32);
         Ok(())
     }
