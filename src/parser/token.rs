@@ -1,6 +1,4 @@
-use crate::values::Value;
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TokenType {
     // Single-character tokens
     LeftParen,
@@ -32,7 +30,7 @@ pub enum TokenType {
     // Literals
     Identifier,
     String,
-    Number,
+    Number(NumberType),
 
     // Keywords
     Class,
@@ -54,25 +52,24 @@ pub enum TokenType {
     Eof,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum NumberType {
+    Integer,
+    Double,
+}
+
 #[derive(Debug, Clone)]
 pub struct Token<'a> {
     pub token_type: TokenType,
     pub lexeme: &'a str,
-    pub literal: Option<Value>,
     pub line: usize,
 }
 
 impl<'a> Token<'a> {
-    pub fn new(
-        token_type: TokenType,
-        lexeme: &'a str,
-        literal: Option<Value>,
-        line: usize,
-    ) -> Self {
+    pub fn new(token_type: TokenType, lexeme: &'a str, line: usize) -> Self {
         Self {
             token_type,
             lexeme,
-            literal,
             line,
         }
     }
@@ -83,7 +80,6 @@ impl<'a> Default for Token<'a> {
         Self {
             token_type: TokenType::Error,
             lexeme: "",
-            literal: None,
             line: 0,
         }
     }

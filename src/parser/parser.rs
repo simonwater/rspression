@@ -1,8 +1,9 @@
+use super::{NumberType, Token, TokenType};
+use crate::Value;
 use crate::error::{RspError, RspResult};
 use crate::expr::{Expr, GetExpr};
 use crate::parser::precedence::Precedence;
 use crate::parser::scanner::Scanner;
-use crate::{Token, TokenType, Value};
 use std::rc::Rc;
 
 pub struct Parser<'a> {
@@ -69,7 +70,7 @@ impl<'a> Parser<'a> {
 
     fn parse_prefix(&mut self, token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
         match token.token_type {
-            TokenType::Number
+            TokenType::Number(_)
             | TokenType::String
             | TokenType::True
             | TokenType::False
@@ -193,13 +194,42 @@ impl<'a> Parser<'a> {
 
     fn literal(&mut self, token: Rc<Token<'a>>) -> RspResult<Expr<'a>> {
         let value = match token.token_type {
-            TokenType::Number | TokenType::String => token.literal.clone().unwrap_or(Value::Null),
+            TokenType::Number(num_type) => self.number(token.lexeme, num_type, token.line)?,
+            TokenType::String => self.string(token.lexeme),
             TokenType::True => Value::Boolean(true),
             TokenType::False => Value::Boolean(false),
             TokenType::Null => Value::Null,
             _ => Value::Null,
         };
         Ok(Expr::literal(value))
+    }
+
+    fn string(&mut self, lexeme: &str) -> Value {
+        if lexeme.is_empty() {
+            return Value::Null;
+        }
+        // 去除前后引号
+        let s = lexeme[1..lexeme.len() - 1].to_string();
+        Value::String(s)
+    }
+
+    fn number(&mut self, lexeme: &str, number_type: NumberType, line: usize) -> RspResult<Value> {
+        match number_type {
+            NumberType::Double => {
+                let d: f64 = lexeme.parse().map_err(|_| RspError::ParseError {
+                    line,
+                    message: "Invalid number".to_string(),
+                })?;
+                Ok(Value::Double(d))
+            }
+            NumberType::Integer => {
+                let i: i32 = lexeme.parse().map_err(|_| RspError::ParseError {
+                    line,
+                    message: "Invalid number".to_string(),
+                })?;
+                Ok(Value::Integer(i))
+            }
+        }
     }
 
     fn logic(

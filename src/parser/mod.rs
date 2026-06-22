@@ -6,4 +6,4 @@ pub mod token;
 pub use parser::Parser;
 pub use precedence::Precedence;
 pub use scanner::Scanner;
-pub use token::{Token, TokenType};
+pub use token::{NumberType, Token, TokenType};

@@ -1,6 +1,5 @@
+use super::{NumberType, Token, TokenType};
 use crate::error::{RspError, RspResult};
-use crate::values::Value;
-use crate::{Token, TokenType};
 use std::str::Chars;
 
 pub struct Scanner<'a> {
@@ -44,7 +43,7 @@ impl<'a> Scanner<'a> {
             self.tokens.push(token);
         }
 
-        let token = Token::new(TokenType::Eof, "", None, self.line);
+        let token = Token::new(TokenType::Eof, "", self.line);
         self.tokens.push(token);
 
         Ok(std::mem::take(&mut self.tokens))
@@ -161,7 +160,7 @@ impl<'a> Scanner<'a> {
             '"' => self.string(),
             c if c.is_ascii_digit() => self.number(),
             c if is_alpha(c) => self.identifier(),
-            '\0' => Ok(Token::new(TokenType::Eof, "", None, self.line)),
+            '\0' => Ok(Token::new(TokenType::Eof, "", self.line)),
             _ => {
                 return Err(RspError::ParseError {
                     line: self.line,
@@ -187,11 +186,7 @@ impl<'a> Scanner<'a> {
         }
 
         self.advance(); // closing quote
-
-        let len = self.source.len() - self.chars.as_str().len();
-        let lexeme = &self.source[..len]; // 包含引号
-        let value = self.source[1..lexeme.len() - 1].to_string();
-        Ok(self.token_with_literal(TokenType::String, Some(Value::String(value))))
+        self.make_token(TokenType::String)
     }
 
     fn number(&mut self) -> RspResult<Token<'a>> {
@@ -216,23 +211,11 @@ impl<'a> Scanner<'a> {
             }
         }
 
-        let len = self.source.len() - self.chars.as_str().len();
-        let lexeme = &self.source[..len];
-        let value = if is_double {
-            let d: f64 = lexeme.parse().map_err(|_| RspError::ParseError {
-                line: self.line,
-                message: "Invalid number".to_string(),
-            })?;
-            Value::Double(d)
+        self.make_token(TokenType::Number(if is_double {
+            NumberType::Double
         } else {
-            let i: i32 = lexeme.parse().map_err(|_| RspError::ParseError {
-                line: self.line,
-                message: "Invalid number".to_string(),
-            })?;
-            Value::Integer(i)
-        };
-
-        Ok(self.token_with_literal(TokenType::Number, Some(value)))
+            NumberType::Integer
+        }))
     }
 
     fn identifier(&mut self) -> RspResult<Token<'a>> {
@@ -306,12 +289,8 @@ impl<'a> Scanner<'a> {
     }
 
     fn make_token(&mut self, token_type: TokenType) -> RspResult<Token<'a>> {
-        Ok(self.token_with_literal(token_type, None))
-    }
-
-    fn token_with_literal(&mut self, token_type: TokenType, literal: Option<Value>) -> Token<'a> {
         let len = self.source.len() - self.chars.as_str().len();
         let lexeme = &self.source[..len];
-        Token::new(token_type, lexeme, literal, self.line)
+        Ok(Token::new(token_type, lexeme, self.line))
     }
 }
