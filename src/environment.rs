@@ -7,7 +7,7 @@ pub trait Environment {
         true
     }
     fn get(&self, name: &str) -> Option<&Value>;
-    fn put(&mut self, name: Cow<str>, value: Value) -> bool;
+    fn put(&mut self, name: Cow<'_, str>, value: Value) -> bool;
     fn extend<T: IntoIterator<Item = (String, Value)>>(&mut self, iter: T);
     fn size(&self) -> usize;
 }
@@ -36,7 +36,7 @@ impl Environment for DefaultEnvironment {
         self.map.get(name)
     }
 
-    fn put(&mut self, name: Cow<str>, value: Value) -> bool {
+    fn put(&mut self, name: Cow<'_, str>, value: Value) -> bool {
         if let Some(old_value) = self.map.get_mut(name.as_ref()) {
             *old_value = value;
         } else {

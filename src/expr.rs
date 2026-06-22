@@ -1,6 +1,5 @@
 use crate::Token;
 use crate::values::Value;
-use std::rc::Rc;
 
 pub enum Expr<'a> {
     Binary(BinaryExpr<'a>),
@@ -44,7 +43,7 @@ impl<'a> Expr<'a> {
         }
     }
 
-    pub fn binary(left: Expr<'a>, operator: Rc<Token<'a>>, right: Expr<'a>) -> Expr<'a> {
+    pub fn binary(left: Expr<'a>, operator: Token<'a>, right: Expr<'a>) -> Expr<'a> {
         Expr::Binary(BinaryExpr {
             left: Box::new(left),
             operator,
@@ -52,7 +51,7 @@ impl<'a> Expr<'a> {
         })
     }
 
-    pub fn logic(left: Expr<'a>, operator: Rc<Token<'a>>, right: Expr<'a>) -> Self {
+    pub fn logic(left: Expr<'a>, operator: Token<'a>, right: Expr<'a>) -> Self {
         Expr::Logic(LogicExpr {
             left: Box::new(left),
             operator,
@@ -64,18 +63,18 @@ impl<'a> Expr<'a> {
         Expr::Literal(LiteralExpr { value })
     }
 
-    pub fn unary(operator: Rc<Token<'a>>, right: Expr<'a>) -> Self {
+    pub fn unary(operator: Token<'a>, right: Expr<'a>) -> Self {
         Expr::Unary(UnaryExpr {
             operator,
             right: Box::new(right),
         })
     }
 
-    pub fn id(token: Rc<Token<'a>>) -> Self {
+    pub fn id(token: Token<'a>) -> Self {
         Expr::Id(IdExpr { name: token })
     }
 
-    pub fn assign(left: Expr<'a>, operator: Rc<Token<'a>>, right: Expr<'a>) -> Self {
+    pub fn assign(left: Expr<'a>, operator: Token<'a>, right: Expr<'a>) -> Self {
         Expr::Assign(AssignExpr {
             left: Box::new(left),
             operator,
@@ -83,7 +82,7 @@ impl<'a> Expr<'a> {
         })
     }
 
-    pub fn call(callee: Expr<'a>, arguments: Vec<Expr<'a>>, r_paren: Rc<Token<'a>>) -> Self {
+    pub fn call(callee: Expr<'a>, arguments: Vec<Expr<'a>>, r_paren: Token<'a>) -> Self {
         Expr::Call(CallExpr {
             callee: Box::new(callee),
             arguments,
@@ -103,14 +102,14 @@ impl<'a> Expr<'a> {
         })
     }
 
-    pub fn get(object: Expr<'a>, name: Rc<Token<'a>>) -> Self {
+    pub fn get(object: Expr<'a>, name: Token<'a>) -> Self {
         Expr::Get(GetExpr {
             object: Box::new(object),
             name,
         })
     }
 
-    pub fn set(object: Expr<'a>, name: Rc<Token<'a>>, value: Expr<'a>) -> Self {
+    pub fn set(object: Expr<'a>, name: Token<'a>, value: Expr<'a>) -> Self {
         Expr::Set(SetExpr {
             object: Box::new(object),
             name,
@@ -121,13 +120,13 @@ impl<'a> Expr<'a> {
 
 pub struct BinaryExpr<'a> {
     pub left: Box<Expr<'a>>,
-    pub operator: Rc<Token<'a>>,
+    pub operator: Token<'a>,
     pub right: Box<Expr<'a>>,
 }
 
 pub struct LogicExpr<'a> {
     pub left: Box<Expr<'a>>,
-    pub operator: Rc<Token<'a>>,
+    pub operator: Token<'a>,
     pub right: Box<Expr<'a>>,
 }
 
@@ -136,24 +135,24 @@ pub struct LiteralExpr {
 }
 
 pub struct UnaryExpr<'a> {
-    pub operator: Rc<Token<'a>>,
+    pub operator: Token<'a>,
     pub right: Box<Expr<'a>>,
 }
 
 pub struct IdExpr<'a> {
-    pub name: Rc<Token<'a>>,
+    pub name: Token<'a>,
 }
 
 pub struct AssignExpr<'a> {
     pub left: Box<Expr<'a>>,
-    pub operator: Rc<Token<'a>>,
+    pub operator: Token<'a>,
     pub right: Box<Expr<'a>>,
 }
 
 pub struct CallExpr<'a> {
     pub callee: Box<Expr<'a>>,
     pub arguments: Vec<Expr<'a>>,
-    pub r_paren: Rc<Token<'a>>,
+    pub r_paren: Token<'a>,
 }
 
 pub struct IfExpr<'a> {
@@ -164,11 +163,11 @@ pub struct IfExpr<'a> {
 
 pub struct GetExpr<'a> {
     pub object: Box<Expr<'a>>,
-    pub name: Rc<Token<'a>>,
+    pub name: Token<'a>,
 }
 
 pub struct SetExpr<'a> {
     pub object: Box<Expr<'a>>,
-    pub name: Rc<Token<'a>>,
+    pub name: Token<'a>,
     pub value: Box<Expr<'a>>,
 }

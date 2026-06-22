@@ -58,7 +58,7 @@ pub enum NumberType {
     Double,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Token<'a> {
     pub token_type: TokenType,
     pub lexeme: &'a str,

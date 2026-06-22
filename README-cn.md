@@ -52,9 +52,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // With variables
     let mut env = DefaultEnvironment::new();
-    env.put("a".to_string(), Value::Integer(1));
-    env.put("b".to_string(), Value::Integer(2));
-    env.put("c".to_string(), Value::Integer(3));
+    env.put("a".into(), Value::Integer(1));
+    env.put("b".into(), Value::Integer(2));
+    env.put("c".into(), Value::Integer(3));
     println!(
         "a + b * c = {}",
         runner.execute_with_env("a + b * c", &mut env)?
@@ -79,9 +79,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut runner = RspRunner::new();
     let mut env = DefaultEnvironment::new();
-    env.put("m".to_string(), Value::Integer(2));
-    env.put("n".to_string(), Value::Integer(4));
-    env.put("w".to_string(), Value::Integer(6));
+    env.put("m".into(), Value::Integer(2));
+    env.put("n".into(), Value::Integer(4));
+    env.put("w".into(), Value::Integer(6));
 
     runner.execute_multiple_with_env(&srcs, &mut env)?;
     println!("x = {}", env.get("x").unwrap()); // x = 270
@@ -100,9 +100,9 @@ use rspression::{DefaultEnvironment, Environment, RspRunner, Value};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut env = DefaultEnvironment::new();
-    env.put("a".to_string(), Value::Integer(1));
-    env.put("b".to_string(), Value::Integer(2));
-    env.put("c".to_string(), Value::Integer(3));
+    env.put("a".into(), Value::Integer(1));
+    env.put("b".into(), Value::Integer(2));
+    env.put("c".into(), Value::Integer(3));
     let mut runner = RspRunner::new();
     let r = runner.execute_with_env("a + b * c", &mut env)?;
     println!("{}", r); // 7
@@ -140,9 +140,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let chunk = ChunkView::from_bytes(&bytes)?;
     // 3. define environment
     let mut env = DefaultEnvironment::new();
-    env.put("m".to_string(), Value::Integer(2));
-    env.put("n".to_string(), Value::Integer(4));
-    env.put("w".to_string(), Value::Integer(6));
+    env.put("m".into(), Value::Integer(2));
+    env.put("n".into(), Value::Integer(4));
+    env.put("w".into(), Value::Integer(6));
     // 4. run bytecode
     let mut runner = RspRunner::new();
     runner.run_chunk(&chunk, &mut env)?;

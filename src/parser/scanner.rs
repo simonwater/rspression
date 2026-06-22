@@ -3,7 +3,7 @@ use crate::error::{RspError, RspResult};
 use std::str::Chars;
 
 pub struct Scanner<'a> {
-    source: &'a str,
+    token_start_str: &'a str,
     chars: Chars<'a>,
     tokens: Vec<Token<'a>>,
     current_char: Option<char>,
@@ -27,7 +27,7 @@ impl<'a> Scanner<'a> {
     pub fn new(source: &'a str) -> Self {
         Self {
             chars: source.chars(),
-            source: source,
+            token_start_str: source,
             tokens: Vec::<Token>::new(),
             current_char: None,
             line: 1,
@@ -37,7 +37,7 @@ impl<'a> Scanner<'a> {
     pub fn scan_tokens(&mut self) -> RspResult<Vec<Token<'a>>> {
         while !self.is_at_end() {
             let token = self.next_token()?;
-            if self.is_at_end() {
+            if token.token_type == TokenType::Eof {
                 break;
             }
             self.tokens.push(token);
@@ -51,7 +51,7 @@ impl<'a> Scanner<'a> {
 
     pub fn next_token(&mut self) -> RspResult<Token<'a>> {
         self.skip_whitespace();
-        self.source = self.chars.as_str();
+        self.token_start_str = self.chars.as_str();
         if self.is_at_end() {
             return self.make_token(TokenType::Eof);
         }
@@ -223,8 +223,8 @@ impl<'a> Scanner<'a> {
             self.advance();
         }
 
-        let len = self.source.len() - self.chars.as_str().len();
-        let lexeme = &self.source[..len];
+        let len = self.token_start_str.len() - self.chars.as_str().len();
+        let lexeme = &self.token_start_str[..len];
         let token_type = self.identifier_type(lexeme);
         self.make_token(token_type)
     }
@@ -289,8 +289,8 @@ impl<'a> Scanner<'a> {
     }
 
     fn make_token(&mut self, token_type: TokenType) -> RspResult<Token<'a>> {
-        let len = self.source.len() - self.chars.as_str().len();
-        let lexeme = &self.source[..len];
+        let len = self.token_start_str.len() - self.chars.as_str().len();
+        let lexeme = &self.token_start_str[..len];
         Ok(Token::new(token_type, lexeme, self.line))
     }
 }
