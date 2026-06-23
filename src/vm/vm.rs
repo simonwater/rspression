@@ -163,7 +163,7 @@ impl VM {
                     let name = self.read_str(reader);
                     let object = self.pop();
                     if let Value::Instance(instance) = object {
-                        if let Some(value) = instance.borrow().get(&name) {
+                        if let Some(value) = instance.borrow().get(name) {
                             self.push(value.clone());
                         } else {
                             return Err(RspError::RuntimeError {
@@ -187,7 +187,7 @@ impl VM {
                     let object = self.pop();
                     if let Value::Instance(instance) = object {
                         let value = self.peek().clone();
-                        instance.borrow_mut().set(name.to_string(), value);
+                        instance.borrow_mut().insert(name.to_string(), value);
                     } else {
                         return Err(RspError::RuntimeError {
                             message: format!(

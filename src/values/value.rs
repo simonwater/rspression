@@ -1,5 +1,5 @@
-use crate::values::Instance;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
 
@@ -9,7 +9,7 @@ pub enum Value {
     Double(f64),
     String(Rc<str>),
     Boolean(bool),
-    Instance(Rc<RefCell<Instance>>),
+    Instance(Rc<RefCell<HashMap<String, Value>>>),
     Null,
 }
 
@@ -92,14 +92,14 @@ impl Value {
         }
     }
 
-    pub fn as_instance(&self) -> Option<Rc<RefCell<Instance>>> {
+    pub fn as_instance(&self) -> Option<Rc<RefCell<HashMap<String, Value>>>> {
         match self {
             Value::Instance(i) => Some(i.clone()),
             _ => None,
         }
     }
 
-    pub fn as_instance_mut(&mut self) -> Option<Rc<RefCell<Instance>>> {
+    pub fn as_instance_mut(&mut self) -> Option<Rc<RefCell<HashMap<String, Value>>>> {
         match self {
             Value::Instance(i) => Some(i.clone()),
             _ => None,

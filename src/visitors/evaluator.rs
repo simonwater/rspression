@@ -140,7 +140,7 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
         let GetExpr { object, name } = expr;
         let object_val = self.evaluate(object)?;
         if let Some(instance) = object_val.as_instance() {
-            match instance.borrow().get(&name.lexeme) {
+            match instance.borrow().get(name.lexeme) {
                 Some(val) => Ok(val.clone()),
                 None => Ok(Value::Null),
             }
@@ -163,7 +163,7 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
         if let Some(instance) = object_val.as_instance_mut() {
             instance
                 .borrow_mut()
-                .set(name.lexeme.to_string(), value_val.clone());
+                .insert(name.lexeme.to_string(), value_val.clone());
             Ok(value_val)
         } else {
             Err(crate::error::RspError::RuntimeError {
