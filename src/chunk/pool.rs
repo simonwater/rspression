@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::values::Value;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ConstantPool {
     constants: Vec<Value>,
     index_map: HashMap<String, usize>,

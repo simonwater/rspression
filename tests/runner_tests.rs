@@ -5,7 +5,7 @@ fn test_basic_arithmetic() {
     let mut runner = RspRunner::new();
     assert_eq!(3, runner.execute("//a\n1 + 2").unwrap().as_integer());
     assert_eq!(Value::Integer(3), runner.execute("1 + 2").unwrap());
-    assert_eq!(Value::Integer(2), runner.execute("if 5 - 3").unwrap());
+    assert_eq!(Value::Integer(2), runner.execute("5 - 3").unwrap());
     assert_eq!(Value::Integer(12), runner.execute("4 * 3").unwrap());
     assert_eq!(Value::Integer(4), runner.execute("8 / 2").unwrap());
     assert_eq!(Value::Integer(0), runner.execute("1 + 2 - 3").unwrap());

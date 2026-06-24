@@ -3,11 +3,13 @@ use crate::{
     chunk::{ChunkReader, ChunkView},
     environment::{DefaultEnvironment, Environment},
     error::RspError,
+    functions::Callable,
     functions::FunctionManager,
     parser::TokenType,
     values::{Value, value_helper},
     vm::OpCode,
 };
+use std::rc::Rc;
 
 pub struct ExResult {
     pub result: Value,
@@ -162,8 +164,8 @@ impl VM {
                 OpCode::GetProperty => {
                     let name = self.read_str(reader);
                     let object = self.pop();
-                    if let Value::Instance(instance) = object {
-                        if let Some(value) = instance.borrow().get(name) {
+                    if let Value::Object(o) = object {
+                        if let Some(value) = o.borrow().get(name) {
                             self.push(value.clone());
                         } else {
                             return Err(RspError::RuntimeError {
@@ -185,13 +187,13 @@ impl VM {
                 OpCode::SetProperty => {
                     let name = self.read_str(reader);
                     let object = self.pop();
-                    if let Value::Instance(instance) = object {
+                    if let Value::Object(instance) = object {
                         let value = self.peek().clone();
                         instance.borrow_mut().insert(name.to_string(), value);
                     } else {
                         return Err(RspError::RuntimeError {
                             message: format!(
-                                "Only instances have properties. error: {}, order: {}",
+                                "Only objects have properties. error: {}, order: {}",
                                 name, exp_order
                             ),
                         });
@@ -212,8 +214,9 @@ impl VM {
                 OpCode::Not => self.pre_unary_op(TokenType::Bang)?,
                 OpCode::Negate => self.pre_unary_op(TokenType::Minus)?,
                 OpCode::Call => {
+                    let arity = self.read_int(reader);
                     let name = self.read_str(reader);
-                    self.call_function(&name)?;
+                    self.call_function(name, arity, env)?;
                 }
                 OpCode::JumpIfFalse => {
                     let offset = self.read_int(reader) as usize;
@@ -248,26 +251,44 @@ impl VM {
         }
     }
 
-    fn call_function(&mut self, name: &str) -> RspResult<()> {
-        let arity = if let Some(function) = self.function_manager.get(name) {
-            function.arity()
-        } else {
-            return Err(RspError::RuntimeError {
-                message: format!("Undefined function: {}", name),
-            });
-        };
-
+    fn call_function<E: Environment>(
+        &mut self,
+        name: &str,
+        arity: i32,
+        env: &mut E,
+    ) -> RspResult<()> {
         let mut arguments = Vec::new();
         for _ in 0..arity {
             arguments.push(self.pop());
         }
         arguments.reverse(); // Arguments are pushed in reverse order
 
-        if let Some(function) = self.function_manager.get(name) {
-            let result = function.call(arguments);
-            self.push(result);
-        }
+        let function = self.get_function(name, env)?;
+        let result = function.call(arguments, env)?;
+        self.push(result);
         RspResult::Ok(())
+    }
+
+    fn get_function<E: Environment>(
+        &mut self,
+        name: &str,
+        env: &mut E,
+    ) -> RspResult<Rc<dyn Callable>> {
+        if let Some(value) = env.get(name) {
+            if let Some(function) = value.as_function() {
+                return Ok(function);
+            } else {
+                return Err(RspError::RuntimeError {
+                    message: format!("Value: {} is not callable", name),
+                });
+            }
+        } else if let Some(function) = self.function_manager.get(name) {
+            return Ok(function);
+        } else {
+            return Err(RspError::RuntimeError {
+                message: format!("Undefined function: {}", name),
+            });
+        }
     }
 
     fn binary_op(&mut self, op_type: TokenType) -> RspResult<()> {

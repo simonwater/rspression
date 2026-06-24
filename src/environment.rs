@@ -8,11 +8,11 @@ pub trait Environment {
     }
     fn get(&self, name: &str) -> Option<&Value>;
     fn put(&mut self, name: Cow<'_, str>, value: Value) -> bool;
-    fn extend<T: IntoIterator<Item = (String, Value)>>(&mut self, iter: T);
+    fn extend(&mut self, iter: &mut dyn Iterator<Item = (String, Value)>);
     fn size(&self) -> usize;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct DefaultEnvironment {
     map: HashMap<String, Value>,
 }
@@ -45,7 +45,7 @@ impl Environment for DefaultEnvironment {
         true
     }
 
-    fn extend<T: IntoIterator<Item = (String, Value)>>(&mut self, iter: T) {
+    fn extend(&mut self, iter: &mut dyn Iterator<Item = (String, Value)>) {
         self.map.extend(iter);
     }
 

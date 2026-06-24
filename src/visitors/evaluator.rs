@@ -1,5 +1,7 @@
 use crate::environment::Environment;
 use crate::error::{RspError, RspResult};
+use crate::functions::{Callable, FunctionManager};
+use std::rc::Rc;
 
 use crate::TokenType;
 use crate::expr::Visitor;
@@ -12,23 +14,42 @@ use crate::expr::{
 
 pub struct Evaluator<'a, E: Environment> {
     environment: &'a mut E,
+    function_manager: FunctionManager,
 }
 
 impl<'a, E: Environment> Evaluator<'a, E> {
     pub fn new(environment: &'a mut E) -> Self {
-        Self { environment }
+        Self {
+            environment,
+            function_manager: FunctionManager::new(),
+        }
     }
 
     pub fn evaluate(&mut self, expr: &Expr) -> RspResult<Value> {
         expr.accept(self)
     }
 
-    fn call_function(&self, _callee: Value, _arguments: Vec<Value>) -> RspResult<Value> {
-        // For now, we'll implement basic function calling
-        // In a full implementation, this would handle built-in functions
-        Err(crate::error::RspError::RuntimeError {
-            message: "Function calling not implemented".to_string(),
-        })
+    fn call_function(&mut self, name: &str, arguments: Vec<Value>) -> RspResult<Value> {
+        let function = self.get_function(name)?;
+        function.call(arguments, self.environment)
+    }
+
+    fn get_function(&mut self, name: &str) -> RspResult<Rc<dyn Callable>> {
+        if let Some(value) = self.environment.get(name) {
+            if let Some(function) = value.as_function() {
+                return Ok(function);
+            } else {
+                return Err(RspError::RuntimeError {
+                    message: format!("Value: {} is not callable", name),
+                });
+            }
+        } else if let Some(function) = self.function_manager.get(name) {
+            return Ok(function);
+        } else {
+            return Err(RspError::RuntimeError {
+                message: format!("Undefined function: {}", name),
+            });
+        }
     }
 }
 
@@ -108,15 +129,18 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
     }
 
     fn visit_call(&mut self, expr: &CallExpr) -> RspResult<Value> {
-        let CallExpr {
-            callee, arguments, ..
-        } = expr;
-        let callee_val = self.evaluate(callee)?;
-        let mut arg_values = Vec::new();
-        for arg in arguments {
-            arg_values.push(self.evaluate(arg)?);
+        if let Expr::Id(id_expr) = &*expr.callee {
+            let name = id_expr.name.lexeme;
+            let mut args = Vec::new();
+            for arg in &expr.arguments {
+                args.push(self.evaluate(arg)?);
+            }
+            self.call_function(name, args)
+        } else {
+            Err(RspError::RuntimeError {
+                message: "Invalic function call expression".to_string(),
+            })
         }
-        self.call_function(callee_val, arg_values)
     }
 
     fn visit_if(&mut self, expr: &IfExpr) -> RspResult<Value> {
@@ -139,8 +163,8 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
     fn visit_get(&mut self, expr: &GetExpr) -> RspResult<Value> {
         let GetExpr { object, name } = expr;
         let object_val = self.evaluate(object)?;
-        if let Some(instance) = object_val.as_instance() {
-            match instance.borrow().get(name.lexeme) {
+        if let Some(o) = object_val.as_object() {
+            match o.borrow().get(name.lexeme) {
                 Some(val) => Ok(val.clone()),
                 None => Ok(Value::Null),
             }
@@ -158,16 +182,16 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
             value,
         } = expr;
 
-        let mut object_val = self.evaluate(object)?;
+        let object_val = self.evaluate(object)?;
         let value_val = self.evaluate(value)?;
-        if let Some(instance) = object_val.as_instance_mut() {
+        if let Some(instance) = object_val.as_object() {
             instance
                 .borrow_mut()
                 .insert(name.lexeme.to_string(), value_val.clone());
             Ok(value_val)
         } else {
             Err(crate::error::RspError::RuntimeError {
-                message: "Only instances have fields".to_string(),
+                message: "Only objects have fields".to_string(),
             })
         }
     }

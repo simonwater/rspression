@@ -1,32 +1,22 @@
-use std::collections::HashMap;
+use crate::Environment;
+use crate::RspError;
+use crate::RspResult;
 use crate::values::Value;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 pub trait Callable {
-    fn call(&self, arguments: Vec<Value>) -> Value;
-    fn arity(&self) -> usize;
+    fn call(&self, arguments: Vec<Value>, env: &mut dyn Environment) -> RspResult<Value>;
 }
 
-pub struct Function {
-    pub name: String,
-    pub arity: usize,
-    pub body: fn(Vec<Value>) -> Value,
-}
-
-impl Callable for Function {
-    fn call(&self, arguments: Vec<Value>) -> Value {
-        if arguments.len() != self.arity {
-            panic!("Expected {} arguments but got {}", self.arity, arguments.len());
-        }
-        (self.body)(arguments)
-    }
-
-    fn arity(&self) -> usize {
-        self.arity
-    }
+pub enum Arity {
+    Fixed(usize),         // 固定参数，如 IF(c, t, e) 是 Fixed(3)
+    Variadic,             // 变长参数，如 SUM(...)
+    MinMax(usize, usize), // 范围变长，如 COUNTIF 最少1个最多2个
 }
 
 pub struct FunctionManager {
-    functions: HashMap<String, Box<dyn Callable>>,
+    functions: HashMap<String, Rc<dyn Callable>>,
 }
 
 impl FunctionManager {
@@ -38,18 +28,18 @@ impl FunctionManager {
         manager
     }
 
-    pub fn register(&mut self, name: String, callable: Box<dyn Callable>) {
+    pub fn register(&mut self, name: String, callable: Rc<dyn Callable>) {
         self.functions.insert(name, callable);
     }
 
-    pub fn get(&self, name: &str) -> Option<&Box<dyn Callable>> {
-        self.functions.get(name)
+    pub fn get(&self, name: &str) -> Option<Rc<dyn Callable>> {
+        self.functions.get(name).map(Rc::clone)
     }
 
     fn register_builtins(&mut self) {
         // Register built-in functions
-        self.register("clock".to_string(), Box::new(ClockFunction));
-        self.register("abs".to_string(), Box::new(AbsFunction));
+        self.register("clock".to_string(), Rc::new(ClockFunction));
+        self.register("abs".to_string(), Rc::new(AbsFunction));
     }
 }
 
@@ -57,36 +47,32 @@ impl FunctionManager {
 pub struct ClockFunction;
 
 impl Callable for ClockFunction {
-    fn call(&self, _arguments: Vec<Value>) -> Value {
+    fn call(&self, _arguments: Vec<Value>, _: &mut dyn Environment) -> RspResult<Value> {
         use std::time::{SystemTime, UNIX_EPOCH};
         let duration = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs_f64();
-        Value::Double(duration)
-    }
-
-    fn arity(&self) -> usize {
-        0
+        Ok(Value::Double(duration))
     }
 }
 
 pub struct AbsFunction;
 
 impl Callable for AbsFunction {
-    fn call(&self, arguments: Vec<Value>) -> Value {
+    fn call(&self, arguments: Vec<Value>, _: &mut dyn Environment) -> RspResult<Value> {
         if let Some(value) = arguments.get(0) {
             match value {
-                Value::Integer(i) => Value::Integer(i.abs()),
-                Value::Double(d) => Value::Double(d.abs()),
-                _ => Value::Null,
+                Value::Integer(i) => Ok(Value::from(i.abs())),
+                Value::Double(d) => Ok(Value::from(d.abs())),
+                _ => Err(RspError::RuntimeError {
+                    message: format!("Value: {} can not call abs function", value),
+                }),
             }
         } else {
-            Value::Null
+            return Err(RspError::RuntimeError {
+                message: format!("abs function must take 1 argument"),
+            });
         }
-    }
-
-    fn arity(&self) -> usize {
-        1
     }
 }

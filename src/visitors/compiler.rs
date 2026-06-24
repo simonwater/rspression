@@ -7,7 +7,6 @@ use crate::{
         AssignExpr, BinaryExpr, CallExpr, Expr, GetExpr, IdExpr, IfExpr, LiteralExpr, LogicExpr,
         SetExpr, UnaryExpr, Visitor,
     },
-    functions::FunctionManager,
     ir::ExprInfo,
     parser::TokenType,
     values::Value,
@@ -17,7 +16,6 @@ use crate::{
 pub struct OpCodeCompiler {
     chunk_writer: ChunkWriter,
     var_set: HashSet<String>,
-    function_manager: FunctionManager,
 }
 
 impl OpCodeCompiler {
@@ -25,7 +23,6 @@ impl OpCodeCompiler {
         Self {
             chunk_writer: ChunkWriter::new(),
             var_set: HashSet::new(),
-            function_manager: FunctionManager::new(),
         }
     }
 
@@ -44,7 +41,7 @@ impl OpCodeCompiler {
     }
 
     pub fn compile_expr(&mut self, expr: &Expr, order: usize) -> RspResult<()> {
-        self.emit_op_with_arg(OpCode::Begin, order as i32);
+        self.emit_op_with_arg1(OpCode::Begin, order as i32);
         self.execute(expr)?;
         self.emit_op(OpCode::End);
         Ok(())
@@ -65,14 +62,20 @@ impl OpCodeCompiler {
         self.chunk_writer.write_code(op);
     }
 
-    fn emit_op_with_arg(&mut self, op: OpCode, arg: i32) {
+    fn emit_op_with_arg1(&mut self, op: OpCode, arg: i32) {
         self.chunk_writer.write_code(op);
-        self.chunk_writer.write_int(arg as i32);
+        self.chunk_writer.write_int(arg);
+    }
+
+    fn emit_op_with_arg2(&mut self, op: OpCode, arg1: i32, arg2: i32) {
+        self.chunk_writer.write_code(op);
+        self.chunk_writer.write_int(arg1);
+        self.chunk_writer.write_int(arg2);
     }
 
     fn emit_constant(&mut self, value: Value) {
         let index = self.make_constant(value);
-        self.emit_op_with_arg(OpCode::Constant, index as i32);
+        self.emit_op_with_arg1(OpCode::Constant, index as i32);
     }
 
     fn make_constant(&mut self, value: Value) -> usize {
@@ -162,7 +165,7 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
 
     fn visit_id(&mut self, expr: &IdExpr) -> RspResult<()> {
         let constant = self.make_constant(Value::from(expr.name.lexeme));
-        self.emit_op_with_arg(OpCode::GetGlobal, constant as i32);
+        self.emit_op_with_arg1(OpCode::GetGlobal, constant as i32);
         Ok(())
     }
 
@@ -170,7 +173,7 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
         self.execute(&expr.right)?;
         if let Expr::Id(id_expr) = &*expr.left {
             let constant = self.make_constant(Value::from(id_expr.name.lexeme));
-            self.emit_op_with_arg(OpCode::SetGlobal, constant as i32);
+            self.emit_op_with_arg1(OpCode::SetGlobal, constant as i32);
         }
         Ok(())
     }
@@ -178,29 +181,12 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
     fn visit_call(&mut self, expr: &CallExpr) -> RspResult<()> {
         if let Expr::Id(id_expr) = &*expr.callee {
             let name = id_expr.name.lexeme;
-            let func = self
-                .function_manager
-                .get(name)
-                .ok_or(RspError::CompileError {
-                    message: format!("Undefined function: {}", name),
-                })?;
-
-            if func.arity() != expr.arguments.len() {
-                return Err(RspError::CompileError {
-                    message: format!(
-                        "Expected {} arguments but got {} for function {}",
-                        func.arity(),
-                        expr.arguments.len(),
-                        name
-                    ),
-                });
-            }
-
             for arg in &expr.arguments {
                 self.execute(arg)?;
             }
+            let arity = expr.arguments.len();
             let constant = self.make_constant(Value::from(name));
-            self.emit_op_with_arg(OpCode::Call, constant as i32);
+            self.emit_op_with_arg2(OpCode::Call, arity as i32, constant as i32);
         }
         Ok(())
     }
@@ -225,7 +211,7 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
     fn visit_get(&mut self, expr: &GetExpr) -> RspResult<()> {
         self.execute(&expr.object)?;
         let constant = self.make_constant(Value::from(expr.name.lexeme));
-        self.emit_op_with_arg(OpCode::GetProperty, constant as i32);
+        self.emit_op_with_arg1(OpCode::GetProperty, constant as i32);
         Ok(())
     }
 
@@ -233,7 +219,7 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
         self.execute(&expr.value)?;
         self.execute(&expr.object)?;
         let constant = self.make_constant(Value::from(expr.name.lexeme));
-        self.emit_op_with_arg(OpCode::SetProperty, constant as i32);
+        self.emit_op_with_arg1(OpCode::SetProperty, constant as i32);
         Ok(())
     }
 }

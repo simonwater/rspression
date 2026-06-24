@@ -20,6 +20,7 @@ pub use chunk::{ChunkView, OwnedChunk};
 pub use environment::{DefaultEnvironment, Environment};
 pub use error::{RspError, RspResult};
 pub use field::Field;
+pub use functions::Callable;
 pub use parser::{Parser, Scanner, Token, TokenType};
 pub use runner::{ExecuteMode, RspRunner};
 pub use values::Value;

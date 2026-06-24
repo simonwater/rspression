@@ -20,6 +20,9 @@ pub enum RspError {
 
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
+
+    #[error("Type error: {message}")]
+    TypeError { message: String },
 }
 
 pub type RspResult<T> = Result<T, RspError>;

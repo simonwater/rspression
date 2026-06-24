@@ -131,7 +131,7 @@ fn get_expressions<'a>() -> Vec<String> {
 
 fn get_env() -> DefaultEnvironment {
     let mut env = DefaultEnvironment::with_capacity(FORMULA_BATCHES * 5);
-    env.extend((0..FORMULA_BATCHES).flat_map(|i| {
+    env.extend(&mut (0..FORMULA_BATCHES).flat_map(|i| {
         let i_str = i.to_string();
         [
             (format!("E{}", i_str), 2.into()),
