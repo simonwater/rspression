@@ -16,6 +16,7 @@ use crate::{
 pub struct OpCodeCompiler {
     chunk_writer: ChunkWriter,
     var_set: HashSet<String>,
+    expr_order: usize,
 }
 
 impl OpCodeCompiler {
@@ -23,17 +24,20 @@ impl OpCodeCompiler {
         Self {
             chunk_writer: ChunkWriter::new(),
             var_set: HashSet::new(),
+            expr_order: 0,
         }
     }
 
     pub fn begin_compile(&mut self) {
         self.chunk_writer.clear();
         self.var_set.clear();
+        self.expr_order = 0;
     }
 
     pub fn compile(&mut self, expr_info: &ExprInfo) -> RspResult<()> {
         let expr = expr_info.get_expr();
         let order = expr_info.get_index();
+        self.expr_order = order;
         self.compile_expr(expr, order)?;
         self.var_set.extend(expr_info.get_reads().clone());
         self.var_set.extend(expr_info.get_writes().clone());
@@ -112,8 +116,11 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
             TokenType::BangEqual => OpCode::BangEqual,
             TokenType::EqualEqual => OpCode::EqualEqual,
             t => {
-                return Err(RspError::RuntimeError {
-                    message: format!("Unknown binary operator: {:?}", t),
+                return Err(RspError::CompileError {
+                    message: format!(
+                        "Unknown binary operator: {:?}, order: {}",
+                        t, self.expr_order
+                    ),
                 });
             }
         };
@@ -156,7 +163,10 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
             TokenType::Minus => self.emit_op(OpCode::Negate),
             t => {
                 return Err(RspError::CompileError {
-                    message: format!("unsupported unary operator: {:?}", t),
+                    message: format!(
+                        "unsupported unary operator: {:?}, order: {}",
+                        t, self.expr_order
+                    ),
                 });
             }
         }
@@ -187,8 +197,15 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
             let arity = expr.arguments.len();
             let constant = self.make_constant(Value::from(name));
             self.emit_op_with_arg2(OpCode::Call, arity as i32, constant as i32);
+            Ok(())
+        } else {
+            Err(RspError::CompileError {
+                message: format!(
+                    "Invalic function call expression, order: {}",
+                    self.expr_order
+                ),
+            })
         }
-        Ok(())
     }
 
     fn visit_if(&mut self, expr: &IfExpr) -> RspResult<()> {

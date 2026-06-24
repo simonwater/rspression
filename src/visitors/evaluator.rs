@@ -1,6 +1,7 @@
 use crate::environment::Environment;
 use crate::error::{RspError, RspResult};
 use crate::functions::{Callable, FunctionManager};
+use crate::ir::ExprInfo;
 use std::rc::Rc;
 
 use crate::TokenType;
@@ -15,6 +16,7 @@ use crate::expr::{
 pub struct Evaluator<'a, E: Environment> {
     environment: &'a mut E,
     function_manager: FunctionManager,
+    expr_order: usize,
 }
 
 impl<'a, E: Environment> Evaluator<'a, E> {
@@ -22,10 +24,18 @@ impl<'a, E: Environment> Evaluator<'a, E> {
         Self {
             environment,
             function_manager: FunctionManager::new(),
+            expr_order: 0,
         }
     }
 
-    pub fn evaluate(&mut self, expr: &Expr) -> RspResult<Value> {
+    pub fn excute(&mut self, expr_info: &ExprInfo) -> RspResult<Value> {
+        let expr = expr_info.get_expr();
+        let order = expr_info.get_index();
+        self.expr_order = order;
+        self.evaluate(expr)
+    }
+
+    fn evaluate(&mut self, expr: &Expr) -> RspResult<Value> {
         expr.accept(self)
     }
 
@@ -40,14 +50,17 @@ impl<'a, E: Environment> Evaluator<'a, E> {
                 return Ok(function);
             } else {
                 return Err(RspError::RuntimeError {
-                    message: format!("Value: {} is not callable", name),
+                    message: format!(
+                        "Value: {} is not callable, order: {}",
+                        name, self.expr_order
+                    ),
                 });
             }
         } else if let Some(function) = self.function_manager.get(name) {
             return Ok(function);
         } else {
             return Err(RspError::RuntimeError {
-                message: format!("Undefined function: {}", name),
+                message: format!("Undefined function: {}, order: {}", name, self.expr_order),
             });
         }
     }
@@ -89,7 +102,7 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
                 }
             }
             _ => Err(crate::error::RspError::RuntimeError {
-                message: "Invalid logical operator".to_string(),
+                message: format!("Invalid logical operator, order: {}", self.expr_order),
             }),
         }
     }
@@ -123,7 +136,7 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
             return Ok(value);
         } else {
             Err(RspError::RuntimeError {
-                message: "Invalic assign expression".to_string(),
+                message: format!("Invalic assign expression, order: {}", self.expr_order),
             })
         }
     }
@@ -138,7 +151,10 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
             self.call_function(name, args)
         } else {
             Err(RspError::RuntimeError {
-                message: "Invalic function call expression".to_string(),
+                message: format!(
+                    "Invalic function call expression, order: {}",
+                    self.expr_order
+                ),
             })
         }
     }
@@ -170,7 +186,7 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
             }
         } else {
             Err(crate::error::RspError::RuntimeError {
-                message: "Only instances have properties".to_string(),
+                message: format!("Only instances have properties, order: {}", self.expr_order),
             })
         }
     }
@@ -191,7 +207,7 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
             Ok(value_val)
         } else {
             Err(crate::error::RspError::RuntimeError {
-                message: "Only objects have fields".to_string(),
+                message: format!("Only objects have fields, order: {}", self.expr_order),
             })
         }
     }
