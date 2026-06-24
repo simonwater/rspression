@@ -149,6 +149,9 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
                 args.push(self.evaluate(arg)?);
             }
             self.call_function(name, args)
+                .map_err(|err: RspError| RspError::RuntimeError {
+                    message: format!("{}, order:{}", err, self.expr_order),
+                })
         } else {
             Err(RspError::RuntimeError {
                 message: format!(

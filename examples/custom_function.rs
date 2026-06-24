@@ -9,12 +9,12 @@ impl Callable for MyAbsFunction {
             match value {
                 Value::Integer(i) => Ok(Value::from(i.abs())),
                 Value::Double(d) => Ok(Value::from(d.abs())),
-                _ => Err(RspError::RuntimeError {
+                _ => Err(RspError::CallableError {
                     message: format!("Value: {} can not call abs function", value),
                 }),
             }
         } else {
-            return Err(RspError::RuntimeError {
+            return Err(RspError::CallableError {
                 message: format!("abs function must take 1 argument"),
             });
         }
@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     runner.set_execute_mode(ExecuteMode::SyntaxTree);
     println!(
         "my_abs(1 - 2 * 3) = {}",
-        runner.execute_with_env("my_abs(1 - 2 * 3)", &mut env)?
+        runner.execute_with_env("my_abs()", &mut env)?
     );
 
     runner.set_execute_mode(ExecuteMode::ChunkVM);

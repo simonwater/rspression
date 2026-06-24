@@ -216,7 +216,7 @@ impl VM {
                 OpCode::Call => {
                     let arity = self.read_int(reader);
                     let name = self.read_str(reader);
-                    self.call_function(name, arity, env)?;
+                    self.call_function(name, arity, exp_order, env)?;
                 }
                 OpCode::JumpIfFalse => {
                     let offset = self.read_int(reader) as usize;
@@ -255,6 +255,7 @@ impl VM {
         &mut self,
         name: &str,
         arity: i32,
+        order: i32,
         env: &mut E,
     ) -> RspResult<()> {
         let mut arguments = Vec::new();
@@ -264,7 +265,12 @@ impl VM {
         arguments.reverse(); // Arguments are pushed in reverse order
 
         let function = self.get_function(name, env)?;
-        let result = function.call(arguments, env)?;
+        let result =
+            function
+                .call(arguments, env)
+                .map_err(|err: RspError| RspError::RuntimeError {
+                    message: format!("{}, order:{}", err, order),
+                })?;
         self.push(result);
         RspResult::Ok(())
     }

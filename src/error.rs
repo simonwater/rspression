@@ -23,6 +23,9 @@ pub enum RspError {
 
     #[error("Type error: {message}")]
     TypeError { message: String },
+
+    #[error("Callable internal error: {message}")]
+    CallableError { message: String },
 }
 
 pub type RspResult<T> = Result<T, RspError>;
