@@ -70,7 +70,7 @@ impl RspRunner {
 
         let results = if self.execute_mode == ExecuteMode::ChunkVM {
             let chunk = self.compile_ir(&expr_infos)?;
-            self.run_chunk(&chunk.as_view(), env)
+            self.run_chunk(&chunk.try_to_view()?, env)
         } else {
             self.run_ir(&expr_infos, env)
         };

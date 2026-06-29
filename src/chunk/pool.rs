@@ -6,6 +6,7 @@ use crate::values::Value;
 pub struct ConstantPool {
     constants: Vec<Value>,
     index_map: HashMap<String, usize>,
+    byte_size: usize,
 }
 
 impl ConstantPool {
@@ -13,6 +14,7 @@ impl ConstantPool {
         Self {
             constants: Vec::new(),
             index_map: HashMap::new(),
+            byte_size: 0,
         }
     }
 
@@ -53,36 +55,42 @@ impl ConstantPool {
             };
             constants.push(value);
         }
+
         Self {
             constants,
             index_map: HashMap::new(),
+            byte_size: bytes.len(),
         }
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        // Match Java ByteBuffer default big-endian encoding
-        let mut out = Vec::new();
+        let mut out = Vec::with_capacity(self.byte_size);
+        self.append_bytes_to_buf(&mut out);
+        out
+    }
+
+    pub fn append_bytes_to_buf(&self, buf: &mut Vec<u8>) {
+        buf.reserve(self.byte_size);
         for v in &self.constants {
             match v {
                 Value::Integer(i) => {
-                    out.push(v.type_code());
-                    out.extend_from_slice(&i.to_be_bytes());
+                    buf.push(v.type_code());
+                    buf.extend_from_slice(&i.to_be_bytes());
                 }
                 Value::Double(d) => {
-                    out.push(v.type_code());
-                    out.extend_from_slice(&d.to_bits().to_be_bytes());
+                    buf.push(v.type_code());
+                    buf.extend_from_slice(&d.to_bits().to_be_bytes());
                 }
                 Value::String(s) => {
-                    out.push(v.type_code());
+                    buf.push(v.type_code());
                     let b = s.as_bytes();
                     assert!(b.len() <= u16::MAX as usize);
-                    out.extend_from_slice(&(b.len() as u16).to_be_bytes());
-                    out.extend_from_slice(b);
+                    buf.extend_from_slice(&(b.len() as u16).to_be_bytes());
+                    buf.extend_from_slice(b);
                 }
                 _ => panic!("unsupported constant type in pool"),
             }
         }
-        out
     }
 
     pub fn add_const(&mut self, v: Value) -> usize {
@@ -90,10 +98,15 @@ impl ConstantPool {
         if let Some(idx) = self.index_map.get(&key).copied() {
             return idx;
         }
-        match v {
-            Value::Integer(_) | Value::Double(_) | Value::String(_) | Value::Boolean(_) => {}
+        let size = match &v {
+            Value::Integer(_) => 5,
+            Value::Double(_) => 9,
+            Value::String(s) => s.as_bytes().len() + 3, // type: 1, len: 2
+            Value::Boolean(_) => 2,
             _ => panic!("unsupported constant value type: {:?}", v.type_code()),
-        }
+        };
+        self.byte_size += size;
+
         self.constants.push(v);
         let idx = self.constants.len() - 1;
         self.index_map.insert(key, idx);
@@ -106,5 +119,9 @@ impl ConstantPool {
 
     pub fn all(&self) -> &Vec<Value> {
         &self.constants
+    }
+
+    pub fn size(&self) -> usize {
+        self.byte_size
     }
 }

@@ -48,7 +48,7 @@ fn test_compile_chunk() {
     let start = std::time::Instant::now();
     let mut runner = RspRunner::new();
     let chunk = runner.compile_source(&srcs).unwrap();
-    let chunk_view = chunk.as_view();
+    let chunk_view = chunk.try_to_view().unwrap();
     println!("编译用时: {:?}", start.elapsed());
     println!("字节码大小：{}KB.", chunk_view.get_byte_size() / 1024);
 
@@ -65,7 +65,7 @@ fn test_file_chunk() {
     println!("字节码编译到文件再从文件读取执行");
     let file_path = TestHelper::get_path(DIRECTORY, "Chunks.pb");
     let chunk = create_and_get_chunk(&file_path);
-    let chunk = chunk.as_view();
+    let chunk = chunk.try_to_view().unwrap();
     println!(
         "字节码大小：{}KB. code: {}Byte, consts: {}Byte, vars: {}Byte",
         chunk.get_byte_size() / 1024,
@@ -99,7 +99,7 @@ fn create_and_get_chunk(path: &PathBuf) -> OwnedChunk {
     println!("编译完成，耗时：{:?}", start.elapsed());
 
     let start = std::time::Instant::now();
-    TestHelper::write_chunk_file(&chunk, path);
+    TestHelper::write_chunk_file(chunk, path);
     println!("序列化到文件完成，耗时：{:?}", start.elapsed());
 
     let start = std::time::Instant::now();

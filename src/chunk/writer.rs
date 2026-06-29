@@ -27,14 +27,20 @@ impl ChunkWriter {
     }
 
     pub fn flush(&mut self) -> OwnedChunk {
-        let codes = std::mem::take(&mut self.code);
-        let constants = self.pool.to_bytes();
-        let vars = self.is_var_const.as_raw_slice().to_vec();
-        OwnedChunk {
-            codes,
-            constants,
-            vars,
-        }
+        let vars = self.is_var_const.as_raw_mut_slice();
+        let size = 12 + self.code.len() + self.pool.size() + vars.len();
+        let mut bytes: Vec<u8> = Vec::with_capacity(size);
+        // 1.write opcodes size and opcodes
+        bytes.extend_from_slice(&(self.code.len() as u32).to_be_bytes());
+        bytes.extend_from_slice(&self.code);
+        // 2.write constants size and constants bytes
+        bytes.extend_from_slice(&(self.pool.size() as u32).to_be_bytes());
+        self.pool.append_bytes_to_buf(&mut bytes);
+        // 3.write vars size and vars bytes
+        bytes.extend_from_slice(&(vars.len() as u32).to_be_bytes());
+        bytes.extend_from_slice(&vars);
+
+        OwnedChunk::from_bytes(bytes)
     }
 
     pub fn write_byte(&mut self, v: u8) {

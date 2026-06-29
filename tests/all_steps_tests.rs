@@ -40,15 +40,16 @@ fn chunk_serialize_test() {
     let chunk = runner.compile_ir(&expr_infos).unwrap();
     println!("编译成字节码完成。 耗时:{:?}", start.elapsed());
 
-    test_chunk(&chunk);
+    test_chunk(chunk);
     test_syntax_tree(&expr_infos);
     println!("==========");
 }
 
-fn test_chunk(chunk: &OwnedChunk) {
+fn test_chunk(chunk: OwnedChunk) {
+    let chunk_view = chunk.try_to_view().unwrap();
     println!(
         "开始进行字节码序列化反序列化，字节码大小(KB)：{}",
-        chunk.as_view().get_byte_size() / 1024
+        chunk_view.get_byte_size() / 1024
     );
     let start = std::time::Instant::now();
     let path = TestHelper::get_path(DIRECTORY, "Chunks.pb");
@@ -57,13 +58,14 @@ fn test_chunk(chunk: &OwnedChunk) {
 
     let start = std::time::Instant::now();
     let chunk = TestHelper::read_chunk_file(&path).expect("Failed to read chunk file");
+    let chunk_view = chunk.try_to_view().unwrap();
     println!("完成从文件反序列化字节码。 耗时:{:?}", start.elapsed());
 
     let mut env = get_environment();
     println!("开始执行字节码：");
     let start = std::time::Instant::now();
     let mut runner = RspRunner::new();
-    runner.run_chunk(&chunk.as_view(), &mut env).unwrap();
+    runner.run_chunk(&chunk_view, &mut env).unwrap();
     println!("字节码执行完成。 耗时:{:?}", start.elapsed());
     check_result(&env);
 }

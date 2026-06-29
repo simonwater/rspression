@@ -35,7 +35,7 @@ impl TestHelper {
         }
     }
 
-    pub fn write_chunk_file(chunk: &OwnedChunk, file_path: &Path) {
+    pub fn write_chunk_file(chunk: OwnedChunk, file_path: &Path) {
         Self::create_parent_if_not_exist(file_path);
         let bytes = chunk.to_bytes();
         let _ = fs::write(file_path, bytes);
@@ -43,7 +43,7 @@ impl TestHelper {
 
     pub fn read_chunk_file(file_path: &Path) -> RspResult<OwnedChunk> {
         if let Ok(bytes) = fs::read(file_path) {
-            OwnedChunk::from_bytes(bytes)
+            Ok(OwnedChunk::from_bytes(bytes))
         } else {
             Err(RspError::RuntimeError {
                 message: String::from("read file error"),
