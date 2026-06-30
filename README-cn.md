@@ -158,6 +158,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 Chunk对象只由字节数组构成，序列化、反序列化性能极高，适合集群环境使用redis等缓存服务做缓存的场景。
 
+## 致谢
+
+词法分析器和语法分析器的设计借鉴了 Robert Nystrom 的优秀著作《Crafting Interpreters》（[Crafting Interpreters](https://craftinginterpreters.com/)）。
+
 ## License
 
 MIT

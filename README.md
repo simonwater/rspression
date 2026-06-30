@@ -163,6 +163,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 The Chunk object consists only of byte arrays with extremely high serialization and deserialization performance, making it suitable for cluster environments using caching services like Redis.
 
+  ## Acknowledgments
+
+  The scanner and parser are adapted from Robert Nystrom's
+  excellent book [Crafting Interpreters](https://craftinginterpreters.com/).
+
 ## License
 
 MIT
