@@ -12,7 +12,7 @@ impl<'a> ChunkView<'a> {
 
         let read_u32 = |b: &[u8], offset: usize| -> RspResult<usize> {
             if offset + 4 > b.len() {
-                return Err(RspError::RuntimeError {
+                return Err(RspError::FormatError {
                     message: String::from(
                         "Byte stream length is insufficient; unable to parse the length prefix.",
                     ),
@@ -26,7 +26,7 @@ impl<'a> ChunkView<'a> {
         let code_sz = read_u32(bytes, i)?;
         i += 4;
         if i + code_sz > bytes.len() {
-            return Err(RspError::RuntimeError {
+            return Err(RspError::FormatError {
                 message: String::from("Codes data block out of bounds"),
             });
         }
@@ -37,7 +37,7 @@ impl<'a> ChunkView<'a> {
         let const_sz = read_u32(bytes, i)?;
         i += 4;
         if i + const_sz > bytes.len() {
-            return Err(RspError::RuntimeError {
+            return Err(RspError::FormatError {
                 message: String::from("Constants data block out of bounds"),
             });
         }
@@ -48,7 +48,7 @@ impl<'a> ChunkView<'a> {
         let var_sz = read_u32(bytes, i)?;
         i += 4;
         if i + var_sz > bytes.len() {
-            return Err(RspError::RuntimeError {
+            return Err(RspError::FormatError {
                 message: String::from("Vars data block out of bounds"),
             });
         }
