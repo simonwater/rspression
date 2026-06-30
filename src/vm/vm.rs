@@ -41,12 +41,15 @@ impl VM {
         self.top == 0
     }
 
-    fn push(&mut self, value: Value) {
+    fn push(&mut self, value: Value) -> RspResult<()> {
         if self.top >= STACK_MAX {
-            panic!("Stack overflow");
+            return Err(RspError::RuntimeError {
+                message: "Stack overflow".to_string(),
+            });
         }
         self.stack[self.top] = value;
         self.top += 1;
+        Ok(())
     }
 
     fn pop(&mut self) -> Value {
@@ -127,24 +130,24 @@ impl VM {
                 }
                 OpCode::Constant => {
                     let constant = self.read_constant(reader);
-                    self.push(constant.clone());
+                    self.push(constant.clone())?;
                 }
                 OpCode::Pop => {
                     self.pop();
                 }
                 OpCode::Null => {
-                    self.push(Value::Null);
+                    self.push(Value::Null)?;
                 }
                 OpCode::True => {
-                    self.push(Value::Boolean(true));
+                    self.push(Value::Boolean(true))?;
                 }
                 OpCode::False => {
-                    self.push(Value::Boolean(false));
+                    self.push(Value::Boolean(false))?;
                 }
                 OpCode::GetGlobal => {
                     let name = self.read_str(reader);
                     if let Some(value) = env.get(name) {
-                        self.push(value.clone()); // clone the value in env
+                        self.push(value.clone())?; // clone the value in env
                     } else {
                         return Err(RspError::RuntimeError {
                             message: format!("Undefined variable: {}, order: {}", name, exp_order),
@@ -166,7 +169,7 @@ impl VM {
                     let object = self.pop();
                     if let Value::Object(o) = object {
                         if let Some(value) = o.borrow().get(name) {
-                            self.push(value.clone());
+                            self.push(value.clone())?;
                         } else {
                             return Err(RspError::RuntimeError {
                                 message: format!(
@@ -271,7 +274,7 @@ impl VM {
                 .map_err(|err: RspError| RspError::RuntimeError {
                     message: format!("{}, order:{}", err, order),
                 })?;
-        self.push(result);
+        self.push(result)?;
         RspResult::Ok(())
     }
 
@@ -301,14 +304,14 @@ impl VM {
         let b = self.pop();
         let a = self.pop();
         let result = value_helper::evaluate_binary(&a, &b, &op_type)?;
-        self.push(result);
+        self.push(result)?;
         RspResult::Ok(())
     }
 
     fn pre_unary_op(&mut self, op_type: TokenType) -> RspResult<()> {
         let operand = self.pop();
         let result = value_helper::evaluate_unary(&operand, &op_type)?;
-        self.push(result);
+        self.push(result)?;
         RspResult::Ok(())
     }
 

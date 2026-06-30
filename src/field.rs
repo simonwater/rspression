@@ -66,19 +66,23 @@ impl std::fmt::Display for Field {
     }
 }
 
-#[test]
-fn test() {
-    let src = "a.b.c.d";
-    let field = Field::with_str(src);
-    assert_eq!(src, field.to_string());
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test() {
+        let src = "a.b.c.d";
+        let field = Field::with_str(src);
+        assert_eq!(src, field.to_string());
 
-    let src = "table1";
-    let field = Field::with_str(src);
-    assert_eq!(src, field.to_string());
+        let src = "table1";
+        let field = Field::with_str(src);
+        assert_eq!(src, field.to_string());
 
-    let field = Field::with_owner("field1", field.clone());
-    assert_eq!("table1.field1", field.to_string());
+        let field = Field::with_owner("field1", field.clone());
+        assert_eq!("table1.field1", field.to_string());
 
-    let field = Field::with_str("f1");
-    assert_eq!("f1", field.to_string());
+        let field = Field::with_str("f1");
+        assert_eq!("f1", field.to_string());
+    }
 }

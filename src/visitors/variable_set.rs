@@ -32,7 +32,7 @@ impl VariableSet {
         self.depends.insert(name);
     }
 
-    pub fn comebine(&mut self, other_opt: Option<VariableSet>) {
+    pub fn combine(&mut self, other_opt: Option<VariableSet>) {
         if let Some(VariableSet { assigns, depends }) = other_opt {
             self.assigns.extend(assigns);
             self.depends.extend(depends);

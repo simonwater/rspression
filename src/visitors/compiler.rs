@@ -201,7 +201,7 @@ impl Visitor<RspResult<()>> for OpCodeCompiler {
         } else {
             Err(RspError::CompileError {
                 message: format!(
-                    "Invalic function call expression, order: {}",
+                    "Invalid function call expression, order: {}",
                     self.expr_order
                 ),
             })

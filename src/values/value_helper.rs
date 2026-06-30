@@ -43,7 +43,7 @@ pub fn evaluate_binary(left: &Value, right: &Value, operator: &TokenType) -> Rsp
         }
         TokenType::Slash => {
             check_number_operands(left, right)?;
-            if right.is_integer() && right.as_integer() == 0 {
+            if (right.is_integer() || right.is_double()) && right.as_integer() == 0 {
                 return Err(crate::error::RspError::RuntimeError {
                     message: "Division by zero".to_string(),
                 });

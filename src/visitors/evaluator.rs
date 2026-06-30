@@ -28,7 +28,7 @@ impl<'a, E: Environment> Evaluator<'a, E> {
         }
     }
 
-    pub fn excute(&mut self, expr_info: &ExprInfo) -> RspResult<Value> {
+    pub fn execute(&mut self, expr_info: &ExprInfo) -> RspResult<Value> {
         let expr = expr_info.get_expr();
         let order = expr_info.get_index();
         self.expr_order = order;
@@ -136,7 +136,7 @@ impl<'a, E: Environment> Visitor<RspResult<Value>> for Evaluator<'a, E> {
             return Ok(value);
         } else {
             Err(RspError::RuntimeError {
-                message: format!("Invalic assign expression, order: {}", self.expr_order),
+                message: format!("Invalid assign expression, order: {}", self.expr_order),
             })
         }
     }

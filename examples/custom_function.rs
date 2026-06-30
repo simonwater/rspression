@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     runner.set_execute_mode(ExecuteMode::SyntaxTree);
     println!(
         "my_abs(1 - 2 * 3) = {}",
-        runner.execute_with_env("my_abs()", &mut env)?
+        runner.execute_with_env("my_abs(1 - 2 * 3)", &mut env)?
     );
 
     runner.set_execute_mode(ExecuteMode::ChunkVM);

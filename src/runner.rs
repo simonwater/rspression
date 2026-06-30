@@ -97,7 +97,7 @@ impl RspRunner {
         let mut result = vec![Value::default(); n];
         let mut evtor = Evaluator::new(env);
         for info in expr_infos {
-            let v = evtor.excute(info)?;
+            let v = evtor.execute(info)?;
             result[info.get_index()] = v;
         }
         Ok(result)

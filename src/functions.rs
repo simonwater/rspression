@@ -9,7 +9,7 @@ pub trait Callable {
     fn call(&self, arguments: Vec<Value>, env: &mut dyn Environment) -> RspResult<Value>;
 }
 
-pub enum Arity {
+pub enum _Arity {
     Fixed(usize),         // 固定参数，如 IF(c, t, e) 是 Fixed(3)
     Variadic,             // 变长参数，如 SUM(...)
     MinMax(usize, usize), // 范围变长，如 COUNTIF 最少1个最多2个

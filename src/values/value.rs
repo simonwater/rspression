@@ -90,7 +90,12 @@ impl Value {
     pub fn as_integer(&self) -> i32 {
         match self {
             Value::Integer(i) => *i,
-            Value::Double(d) => *d as i32,
+            Value::Double(d) => {
+                if d.is_nan() || *d < i32::MIN as f64 || *d > i32::MAX as f64 {
+                    return 0;
+                }
+                *d as i32
+            }
             _ => 0,
         }
     }
@@ -98,7 +103,14 @@ impl Value {
     pub fn to_integer(&self) -> RspResult<i32> {
         match self {
             Value::Integer(i) => Ok(*i),
-            Value::Double(d) => Ok(*d as i32),
+            Value::Double(d) => {
+                if d.is_nan() || *d < i32::MIN as f64 || *d > i32::MAX as f64 {
+                    return Err(RspError::TypeError {
+                        message: format!("The value: {:?} cannot be converted to Integer.", *d),
+                    });
+                }
+                Ok(*d as i32)
+            }
             _ => Err(RspError::TypeError {
                 message: format!("Expected type is Integer, but got: {:?}", self),
             }),

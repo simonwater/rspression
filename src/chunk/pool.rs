@@ -94,10 +94,6 @@ impl ConstantPool {
     }
 
     pub fn add_const(&mut self, v: Value) -> usize {
-        let key = v.to_string();
-        if let Some(idx) = self.index_map.get(&key).copied() {
-            return idx;
-        }
         let size = match &v {
             Value::Integer(_) => 5,
             Value::Double(_) => 9,
@@ -105,6 +101,11 @@ impl ConstantPool {
             Value::Boolean(_) => 2,
             _ => panic!("unsupported constant value type: {:?}", v.type_code()),
         };
+
+        let key = v.to_string();
+        if let Some(idx) = self.index_map.get(&key).copied() {
+            return idx;
+        }
         self.byte_size += size;
 
         self.constants.push(v);
