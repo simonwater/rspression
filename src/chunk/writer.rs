@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use bitvec::prelude::*;
 
 use crate::{values::Value, vm::OpCode};
@@ -27,7 +29,7 @@ impl ChunkWriter {
     }
 
     pub fn flush(&mut self) -> OwnedChunk {
-        let vars = self.is_var_const.as_raw_mut_slice();
+        let vars = self.is_var_const.as_raw_slice();
         let size = 12 + self.code.len() + self.pool.size() + vars.len();
         let mut bytes: Vec<u8> = Vec::with_capacity(size);
         // 1.write opcodes size and opcodes
@@ -61,7 +63,7 @@ impl ChunkWriter {
     pub fn add_constant(&mut self, v: Value) -> usize {
         self.pool.add_const(v)
     }
-    pub fn set_variables(&mut self, vars: &[String]) {
+    pub fn set_variables(&mut self, vars: &HashSet<String>) {
         let n = vars.len();
         self.is_var_const.resize(n, false);
         for var in vars {

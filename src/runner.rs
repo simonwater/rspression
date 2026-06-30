@@ -1,7 +1,7 @@
 use crate::Field;
 use crate::RspResult;
 use crate::Value;
-use crate::chunk::{ChunkView, OwnedChunk};
+use crate::chunk::{ChunkReader, ChunkView, OwnedChunk};
 use crate::environment::{DefaultEnvironment, Environment};
 use crate::expr::Expr;
 use crate::ir::{Analyzer, ExprInfo};
@@ -10,7 +10,6 @@ use crate::visitors::{Evaluator, OpCodeCompiler};
 use crate::vm::VM;
 
 use std::collections::HashSet;
-use std::rc::Rc;
 
 pub struct RspRunner {
     need_sort: bool,
@@ -82,16 +81,20 @@ impl RspRunner {
         expr_infos: &[&ExprInfo],
         env: &mut E,
     ) -> RspResult<Vec<Value>> {
-        // let mut variables = HashSet::new();
-        // for info in expr_infos {
-        //     variables.union(info.get_reads());
-        //     variables.union(info.get_writes());
-        // }
-        // let fields = self.get_fields(&variables);
-        // let flag = env.before_execute(variables.into_iter().collect());
-        // if !flag {
-        //     return Ok(Vec::new());
-        // }
+        let flag = env.before_execute(&|| {
+            let mut seen = HashSet::new();
+            let stream = expr_infos
+                .iter()
+                .flat_map(|&info| info.get_reads().iter().chain(info.get_writes().iter()))
+                .filter(move |&item| seen.insert(item.clone()))
+                .cloned()
+                .map(|s| Field::from_src(s));
+
+            Box::new(stream)
+        });
+        if !flag {
+            return Ok(Vec::new());
+        }
 
         let n = expr_infos.len();
         let mut result = vec![Value::default(); n];
@@ -108,15 +111,19 @@ impl RspRunner {
         chunk: &ChunkView,
         env: &mut E,
     ) -> RspResult<Vec<Value>> {
-        // let chunk_reader = ChunkReader::new(chunk, self.context.get_tracer());
-        // let fields = self.get_fields(&chunk_reader.get_variables());
-        // let flag = env.before_execute(&strs.iter().map(|str| str).collect());
-        // if !flag {
-        //     return None;
-        // }
+        let mut reader = ChunkReader::from_chunk(chunk);
+        let flag = env.before_execute(&|| {
+            let stream = reader
+                .variable_iter()
+                .map(|s| Field::from_src(s.to_string()));
+            Box::new(stream)
+        });
+        if !flag {
+            return Ok(Vec::new());
+        }
 
         let mut vm = VM::new();
-        let ex_results = vm.execute_with_env(chunk, env)?;
+        let ex_results = vm.execute_reader_with_env(&mut reader, env)?;
         let mut result = vec![Value::default(); ex_results.len()];
         for res in ex_results {
             let r = res.result;
@@ -151,10 +158,6 @@ impl RspRunner {
         }
         let result = compiler.end_compile();
         Ok(result)
-    }
-
-    fn _get_fields(&self, strs: &HashSet<String>) -> Vec<Rc<Field>> {
-        strs.iter().map(|str| Field::with_str(str)).collect()
     }
 }
 

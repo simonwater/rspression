@@ -1,9 +1,14 @@
+use crate::Field;
 use crate::values::Value;
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 pub trait Environment {
-    fn before_execute(&mut self, _vars: &[String]) -> bool {
+    fn before_execute<'a>(
+        &mut self,
+        _f: &dyn Fn() -> Box<dyn Iterator<Item = Rc<Field>> + 'a>,
+    ) -> bool {
         true
     }
     fn get(&self, name: &str) -> Option<&Value>;

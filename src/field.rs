@@ -8,32 +8,32 @@ pub struct Field {
 }
 
 impl Field {
-    pub fn new(name: &str) -> Self {
+    pub fn from_name(name: String) -> Self {
         Field {
-            name: name.to_string(),
+            name: name,
             owner: None,
             src: None,
         }
     }
 
-    pub fn with_owner(name: &str, owner: Rc<Field>) -> Self {
-        Field {
-            name: name.to_string(),
-            owner: Some(owner),
-            src: None,
-        }
-    }
-
-    pub fn with_str(src: &str) -> Rc<Field> {
+    pub fn from_src(src: String) -> Rc<Field> {
         let mut cur: Option<Rc<Field>> = None;
         for name in src.split('.') {
             let field = match cur {
-                Some(ref owner) => Field::with_owner(name, owner.clone()),
-                None => Field::new(name),
+                Some(ref owner) => Field::with_owner(name.to_string(), owner.clone()),
+                None => Field::from_name(name.to_string()),
             };
             cur = Some(Rc::new(field));
         }
         cur.unwrap()
+    }
+
+    pub fn with_owner(name: String, owner: Rc<Field>) -> Self {
+        Field {
+            name: name,
+            owner: Some(owner),
+            src: None,
+        }
     }
 
     pub fn get_name(&self) -> &str {
@@ -72,17 +72,17 @@ mod tests {
     #[test]
     fn test() {
         let src = "a.b.c.d";
-        let field = Field::with_str(src);
+        let field = Field::from_src(src.into());
         assert_eq!(src, field.to_string());
 
         let src = "table1";
-        let field = Field::with_str(src);
+        let field = Field::from_src(src.into());
         assert_eq!(src, field.to_string());
 
-        let field = Field::with_owner("field1", field.clone());
+        let field = Field::with_owner("field1".into(), field.clone());
         assert_eq!("table1.field1", field.to_string());
 
-        let field = Field::with_str("f1");
+        let field = Field::from_src("f1".into());
         assert_eq!("f1", field.to_string());
     }
 }

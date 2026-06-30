@@ -165,7 +165,7 @@ The Chunk object consists only of byte arrays with extremely high serialization 
 
   ## Acknowledgments
 
-  The scanner and parser are adapted from Robert Nystrom's
+  The design of the scanner and parser was inspired by Robert Nystrom's
   excellent book [Crafting Interpreters](https://craftinginterpreters.com/).
 
 ## License

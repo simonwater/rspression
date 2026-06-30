@@ -230,20 +230,15 @@ impl<'a> Scanner<'a> {
 
     fn identifier_type(&self, text: &str) -> TokenType {
         match text {
-            "class" => TokenType::Class,
+            "if" => TokenType::If,
             "else" => TokenType::Else,
             "false" => TokenType::False,
-            "for" => TokenType::For,
-            "fun" => TokenType::Fun,
-            "if" => TokenType::If,
-            "null" => TokenType::Null,
-            "print" => TokenType::Print,
-            "return" => TokenType::Return,
-            "super" => TokenType::Super,
-            "this" => TokenType::This,
             "true" => TokenType::True,
-            "var" => TokenType::Var,
+            "for" => TokenType::For,
             "while" => TokenType::While,
+            "fun" => TokenType::Fun,
+            "null" => TokenType::Null,
+            "return" => TokenType::Return,
             _ => TokenType::Identifier,
         }
     }

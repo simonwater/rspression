@@ -78,7 +78,7 @@ impl VM {
     }
 
     pub fn execute(&mut self, chunk: &ChunkView) -> RspResult<Vec<ExResult>> {
-        let mut reader = ChunkReader::new(&chunk.codes, &chunk.constants, &chunk.vars);
+        let mut reader = ChunkReader::from_chunk(chunk);
         let mut env = DefaultEnvironment::new();
         self.run(&mut reader, &mut env)
     }
@@ -94,7 +94,7 @@ impl VM {
         chunk: &ChunkView,
         env: &mut E,
     ) -> RspResult<Vec<ExResult>> {
-        let mut reader = ChunkReader::new(&chunk.codes, &chunk.constants, &chunk.vars);
+        let mut reader = ChunkReader::from_chunk(chunk);
         self.run(&mut reader, env)
     }
 

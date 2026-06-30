@@ -33,19 +33,14 @@ pub enum TokenType {
     Number(NumberType),
 
     // Keywords
-    Class,
     Else,
     False,
     Fun,
     For,
     If,
     Null,
-    Print,
     Return,
-    Super,
-    This,
     True,
-    Var,
     While,
 
     Error,

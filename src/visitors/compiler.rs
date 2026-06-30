@@ -53,8 +53,7 @@ impl OpCodeCompiler {
 
     pub fn end_compile(&mut self) -> OwnedChunk {
         self.emit_op(OpCode::Exit);
-        self.chunk_writer
-            .set_variables(&self.var_set.iter().cloned().collect::<Vec<_>>());
+        self.chunk_writer.set_variables(&self.var_set);
         self.chunk_writer.flush()
     }
 
